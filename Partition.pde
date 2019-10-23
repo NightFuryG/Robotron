@@ -2,16 +2,23 @@ class Partition {
   PVector position;
   int height;
   int width;
+  Room room;
 
   Partition(float x, float y, int width, int height) {
     this.position = new PVector(x, y);
     this.width = width;
     this.height = height;
+    this.room = null;
   }
 
+  void setRoom(Room room) {
+    this.room = room;
+  }
 
   void draw() {
-    stroke(155);
-    rect(position.x, position.y, width, height);
-  }
+    fill(255);
+    if(room != null) {
+      room.draw();
+    }
+    }
 }

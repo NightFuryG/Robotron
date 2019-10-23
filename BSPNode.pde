@@ -2,31 +2,31 @@ class BSPNode {
 
   final int MIN_PARTITION_SIZE = displayWidth/5;
 
-
   Partition partition;
-  Line line;
-  BSPNode left;
-  BSPNode right;
+  BSPNode leftChild;
+  BSPNode rightChild;
+  ArrayList<Room> corridors;
+
 
   BSPNode(Partition partition) {
     this.partition = partition;
-    this.left = null;
-    this.right = null;
+    this.leftChild = null;
+    this.rightChild = null;
   }
 
   boolean split() {
     //split already occurred
-    if(left != null || right != null) {
+    if(leftChild != null || rightChild != null) {
       return false;
     }
 
     boolean splitHorizontal = randomBoolean();
 
-    if(partition.width > partition.height && partition.width / partition.height >=1.25) {
-      splitHorizontal = false;
-    } else if(partition.height > partition.width && partition.height / partition.width >= 1.25) {
-      splitHorizontal = true;
-    }
+    // if(partition.width > partition.height && partition.width / partition.height >=1.25) {
+    //   splitHorizontal = false;
+    // } else if(partition.height > partition.width && partition.height / partition.width >= 1.25) {
+    //   splitHorizontal = true;
+    // }
 
     int max = (splitHorizontal ? partition.height : partition.width) - MIN_PARTITION_SIZE;
 
@@ -37,16 +37,69 @@ class BSPNode {
     int splitLocation = (int) random(MIN_PARTITION_SIZE, max);
 
     if(splitHorizontal) {
-      this.left = new BSPNode(new Partition(partition.position.x, partition.position.y, partition.width, splitLocation));
-      this.right = new BSPNode(new Partition(partition.position.x, partition.position.y + splitLocation, partition.width, partition.height - splitLocation));
+      this.leftChild = new BSPNode(new Partition(partition.position.x, partition.position.y, partition.width, splitLocation));
+      this.rightChild = new BSPNode(new Partition(partition.position.x, partition.position.y + splitLocation, partition.width, partition.height - splitLocation));
     } else {
-      this.left = new BSPNode(new Partition(partition.position.x, partition.position.y, splitLocation, partition.height));
-      this.right = new BSPNode(new Partition(partition.position.x + splitLocation, partition.position.y, partition.width - splitLocation, partition.height));
+      this.leftChild = new BSPNode(new Partition(partition.position.x, partition.position.y, splitLocation, partition.height));
+      this.rightChild = new BSPNode(new Partition(partition.position.x + splitLocation, partition.position.y, partition.width - splitLocation, partition.height));
     }
     return true;
+  }
 
+  void createRooms() {
+
+    if(leftChild != null || rightChild != null) {
+      if(leftChild != null) {
+        leftChild.createRooms();
+      }
+      if(rightChild != null) {
+        rightChild.createRooms();
+      }
+    } else {
+      PVector roomSize;
+      PVector roomPosition;
+      roomSize = new PVector(random(3 * partition.width/4, partition.width - partition.width/8), random(3 * partition.height/4, partition.height - partition.height/8));
+      roomPosition = new PVector(random(partition.position.x, partition.width - roomSize.x), random(partition.position.y, partition.height - roomSize.y));
+      partition.room = new Room(roomPosition.x, roomPosition.y, roomSize.x, roomSize.y);
+    }
+  }
+
+  Room getRoom() {
+    if(partition.room != null) {
+      return partition.room;
+    } else {
+
+      Room leftRoom = null;
+      Room rightRoom = null;
+
+      if(leftChild != null) {
+        leftRoom = leftChild.getRoom();
+      }
+      if(rightChild != null) {
+        rightRoom = rightChild.getRoom();
+      }
+      if(leftRoom == null && rightRoom == null) {
+        return null;
+      } else if (rightRoom == null) {
+        return leftRoom;
+      } else if (leftRoom == null) {
+        return rightRoom;
+      } else if (randomBoolean()) {
+        return leftRoom;
+      } else {
+        return rightRoom;
+      }
+    }
+  }
+
+  void createCorridor(Room leftRoom, Room rightRoom) {
+    corridors = new ArrayList();
+
+    PVector pointA = new PVector(random(leftRoom.position.x, leftRoom.position.x + leftRoom.width), random(leftRoom.position.y, leftRoom.position.y + leftRoom.height));
 
   }
+
+
 
   boolean randomBoolean() {
     return random(1) > 0.5;

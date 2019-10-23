@@ -14,23 +14,26 @@ class BSPTree {
   void generateNodes() {
     boolean split = true;
 
-    printNodes();
-
     while(split) {
       split = false;
       for(BSPNode node : new ArrayList<BSPNode>(nodes)) {
-        if(node.left == null && node.right == null) {
+        if(node.leftChild == null && node.rightChild == null) {
           if(node.partition.width > MAX_PARTITION_SIZE || node.partition.height > MAX_PARTITION_SIZE ||random75() ) {
             if(node.split()){
-              nodes.add(node.left);
-              nodes.add(node.right);
+              nodes.add(node.leftChild);
+              nodes.add(node.rightChild);
               split = true;
             }
           }
         }
       }
     }
+
+    nodes.get(0).createRooms();
   }
+
+  
+
 
   void printNodes() {
     for(BSPNode node : nodes) {

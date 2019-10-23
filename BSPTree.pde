@@ -32,7 +32,7 @@ class BSPTree {
     nodes.get(0).createRooms();
   }
 
-  
+
 
 
   void printNodes() {
@@ -42,11 +42,19 @@ class BSPTree {
     }
   }
 
+
   void draw() {
     for(BSPNode node : nodes) {
       node.partition.draw();
-    }
-  }
+
+      if(node.corridors != null) {
+        for(Room room : node.corridors) {
+          room.draw();
+        }
+      }
+
+        }
+      }
 
   boolean random75() {
     return random(1) > 0.25;

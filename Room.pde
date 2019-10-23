@@ -11,6 +11,7 @@ class Room {
 
   void draw() {
     fill(255);
+    noStroke();
     rect(position.x, position.y, width, height);
   }
 }

@@ -28,6 +28,7 @@ public void draw () {
 class BSPNode {
 
   final int MIN_PARTITION_SIZE = displayWidth/5;
+  final int CORRIDOR_SIZE = displayWidth/30;
 
   Partition partition;
   BSPNode leftChild;
@@ -82,6 +83,11 @@ class BSPNode {
       if(rightChild != null) {
         rightChild.createRooms();
       }
+      if(leftChild != null && rightChild != null) {
+        createCorridor(leftChild.getRoom(), rightChild.getRoom());
+      }
+
+
     } else {
       PVector roomSize;
       PVector roomPosition;
@@ -96,32 +102,89 @@ class BSPNode {
       return partition.room;
     } else {
 
-      Room leftChildRoom = null;
-      Room rightChildRoom = null;
+      Room leftRoom = null;
+      Room rightRoom = null;
 
       if(leftChild != null) {
-        leftChildRoom = leftChild.getRoom();
+        leftRoom = leftChild.getRoom();
       }
       if(rightChild != null) {
-        rightChildRoom = rightChild.getRoom();
+        rightRoom = rightChild.getRoom();
       }
-      if(leftChildRoom == null && rightChildRoom == null) {
+      if(leftRoom == null && rightRoom == null) {
         return null;
-      } else if (rightChildRoom == null) {
-        return leftChildRoom;
-      } else if (leftChildRoom == null) {
-        return rightChildRoom;
+      } else if (rightRoom == null) {
+        return leftRoom;
+      } else if (leftRoom == null) {
+        return rightRoom;
       } else if (randomBoolean()) {
-        return leftChildRoom;
+        return leftRoom;
       } else {
-        return rightChildRoom;
+        return rightRoom;
       }
     }
   }
 
-  public void createCorridor(Room leftChildRoom, Room rightChildRoom) {
+  public void createCorridor(Room leftRoom, Room rightRoom) {
+    corridors = new ArrayList();
 
+    PVector pointA = new PVector(random(leftRoom.position.x + CORRIDOR_SIZE, leftRoom.position.x + leftRoom.width - 2*CORRIDOR_SIZE),
+     random(leftRoom.position.y + CORRIDOR_SIZE, leftRoom.position.y + leftRoom.height - 2*CORRIDOR_SIZE));
+    PVector pointB = new PVector(random(rightRoom.position.x + CORRIDOR_SIZE, rightRoom.position.x + rightRoom.width - 2*CORRIDOR_SIZE),
+     random(rightRoom.position.y + CORRIDOR_SIZE, rightRoom.position.y + rightRoom.height - 2*CORRIDOR_SIZE));
+
+    float w = pointB.x - pointA.x;
+    float h = pointB.y - pointA.y;
+
+    if(w < 0) {
+      if(h < 0) {
+        if(randomBoolean()) {
+          corridors.add(new Room(pointB.x, pointA.y, abs(w), CORRIDOR_SIZE));
+          corridors.add(new Room(pointB.x, pointB.y, CORRIDOR_SIZE, abs(h)));
+        } else {
+          corridors.add(new Room(pointB.x, pointB.y, abs(w), CORRIDOR_SIZE));
+          corridors.add(new Room(pointA.x, pointB.y, CORRIDOR_SIZE, abs(h)));
+        }
+      } else if (h > 0) {
+        if(randomBoolean()) {
+          corridors.add(new Room(pointB.x, pointA.y, abs(w), CORRIDOR_SIZE));
+          corridors.add(new Room(pointB.x, pointA.y, CORRIDOR_SIZE, abs(h)));
+        } else {
+          corridors.add(new Room(pointB.x, pointB.y, abs(w), CORRIDOR_SIZE));
+          corridors.add(new Room(pointA.x, pointA.y, CORRIDOR_SIZE, abs(h)));
+        }
+      } else {
+        corridors.add(new Room(pointB.x, pointB.y, abs(w), CORRIDOR_SIZE));
+      }
+    } else if (w > 0) {
+        if (h < 0) {
+          if (randomBoolean()){
+            corridors.add(new Room(pointA.x, pointB.y, abs(w), CORRIDOR_SIZE));
+            corridors.add(new Room(pointA.x, pointB.y, CORRIDOR_SIZE, abs(h)));
+          } else {
+            corridors.add(new Room(pointA.x, pointA.y, abs(w), CORRIDOR_SIZE));
+            corridors.add(new Room(pointB.x, pointB.y, CORRIDOR_SIZE, abs(h)));
+          }
+      } else if (h > 0) {
+          if (randomBoolean()) {
+            corridors.add(new Room(pointA.x, pointA.y, abs(w), CORRIDOR_SIZE));
+            corridors.add(new Room(pointB.x, pointA.y, CORRIDOR_SIZE, abs(h)));
+          } else {
+            corridors.add(new Room(pointA.x, pointB.y, abs(w), CORRIDOR_SIZE));
+            corridors.add(new Room(pointA.x, pointA.y, CORRIDOR_SIZE, abs(h)));
+          }
+        } else {
+            corridors.add(new Room(pointA.x, pointA.y, abs(w), CORRIDOR_SIZE));
+        }
+    } else {
+      if (h < 0) {
+        corridors.add(new Room(pointB.x, pointB.y, CORRIDOR_SIZE, abs(h)));
+      } else if (h > 0) {
+        corridors.add(new Room(pointA.x, pointA.y, CORRIDOR_SIZE, abs(h)));
+      }
+    }
   }
+
 
 
 
@@ -163,7 +226,7 @@ class BSPTree {
     nodes.get(0).createRooms();
   }
 
-  
+
 
 
   public void printNodes() {
@@ -173,11 +236,19 @@ class BSPTree {
     }
   }
 
+
   public void draw() {
     for(BSPNode node : nodes) {
       node.partition.draw();
-    }
-  }
+
+      if(node.corridors != null) {
+        for(Room room : node.corridors) {
+          room.draw();
+        }
+      }
+
+        }
+      }
 
   public boolean random75() {
     return random(1) > 0.25f;
@@ -197,15 +268,34 @@ class Line {
 class Map {
 
   BSPTree tree;
+  ArrayList<Room> rooms;
 
   Map() {
     tree = new BSPTree();
-    tree.printNodes();
+    rooms = new ArrayList();
+    addRooms();
   }
 
   public void draw(){
-    tree.draw();
+    for(Room room : rooms) {
+      room.draw();
+    }
   }
+
+  public void addRooms(){
+    for(BSPNode node : tree.nodes) {
+      if(node.partition.room != null) {
+        rooms.add(node.partition.room);
+      }
+      if(node.corridors != null) {
+        rooms.addAll(node.corridors);
+      }
+    }
+
+    System.out.println(rooms.size());
+  }
+
+
 
 }
 class Partition {
@@ -245,6 +335,7 @@ class Room {
 
   public void draw() {
     fill(255);
+    noStroke();
     rect(position.x, position.y, width, height);
   }
 }

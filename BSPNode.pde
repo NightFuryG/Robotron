@@ -96,6 +96,7 @@ class BSPNode {
     corridors = new ArrayList();
 
     PVector pointA = new PVector(random(leftRoom.position.x, leftRoom.position.x + leftRoom.width), random(leftRoom.position.y, leftRoom.position.y + leftRoom.height));
+    PVector pointB = new PVector(random(leftRoom.position.x, leftRoom.position.x + leftRoom.width), random(leftRoom.position.y, leftRoom.position.y + leftRoom.height));
 
   }
 

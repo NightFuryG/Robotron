@@ -237,19 +237,6 @@ class BSPTree {
   }
 
 
-  public void draw() {
-    for(BSPNode node : nodes) {
-      node.partition.draw();
-
-      if(node.corridors != null) {
-        for(Room room : node.corridors) {
-          room.draw();
-        }
-      }
-
-        }
-      }
-
   public boolean random75() {
     return random(1) > 0.25f;
   }
@@ -269,16 +256,21 @@ class Map {
 
   BSPTree tree;
   ArrayList<Room> rooms;
+  ArrayList<Room> corridors;
 
   Map() {
     tree = new BSPTree();
     rooms = new ArrayList();
+    corridors = new ArrayList();
     addRooms();
   }
 
   public void draw(){
     for(Room room : rooms) {
       room.draw();
+    }
+    for(Room corridor : corridors) {
+      corridor.draw();
     }
   }
 
@@ -288,7 +280,7 @@ class Map {
         rooms.add(node.partition.room);
       }
       if(node.corridors != null) {
-        rooms.addAll(node.corridors);
+        corridors.addAll(node.corridors);
       }
     }
 

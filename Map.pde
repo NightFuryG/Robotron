@@ -2,16 +2,21 @@ class Map {
 
   BSPTree tree;
   ArrayList<Room> rooms;
+  ArrayList<Room> corridors;
 
   Map() {
     tree = new BSPTree();
     rooms = new ArrayList();
+    corridors = new ArrayList();
     addRooms();
   }
 
   void draw(){
     for(Room room : rooms) {
       room.draw();
+    }
+    for(Room corridor : corridors) {
+      corridor.draw();
     }
   }
 
@@ -21,7 +26,7 @@ class Map {
         rooms.add(node.partition.room);
       }
       if(node.corridors != null) {
-        rooms.addAll(node.corridors);
+        corridors.addAll(node.corridors);
       }
     }
 

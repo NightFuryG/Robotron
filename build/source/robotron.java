@@ -15,17 +15,68 @@ import java.io.IOException;
 public class robotron extends PApplet {
 
 Map map;
+Player player;
+boolean w, a, s, d;
+
+
 
 public void setup () {
   
-  background(0);
   cursor(CROSS);
   map = new Map();
+  player = new Player(displayWidth/2, displayHeight/2);
+  w = a = s = d = false;
 }
 
 public void draw () {
+  background(0);
   map.draw();
+  playerMove();
+  player.draw();
 }
+
+public void keyPressed() {
+    if(key == 'w') {
+      w = true;
+    } else if (key == 's') {
+      s = true;
+    } else if (key == 'd') {
+      d = true;
+    } else if (key == 'a') {
+      a = true;
+    }
+}
+
+public void keyReleased() {
+  if(key == 'w') {
+    w = false;
+  } else if (key == 's') {
+    s = false;
+  } else if (key == 'd') {
+    d = false;
+  } else if (key == 'a') {
+    a = false;
+  }
+}
+
+public void playerMove() {
+  if(w) {
+    player.move(1);
+  }
+  if(s) {
+    player.move(2);
+  }
+  if(d) {
+    player.move(3);
+  }
+  if(a) {
+    player.move(4);
+  }
+}
+
+// boolean validMove() {
+//
+// }
 class BSPNode {
 
   final int MIN_PARTITION_SIZE = displayWidth/5;
@@ -51,11 +102,11 @@ class BSPNode {
 
     boolean splitHorizontal = randomBoolean();
 
-    // if(partition.width > partition.height && partition.width / partition.height >=1.25) {
-    //   splitHorizontal = false;
-    // } else if(partition.height > partition.width && partition.height / partition.width >= 1.25) {
-    //   splitHorizontal = true;
-    // }
+    if(partition.width > partition.height && partition.width / partition.height >=1.25f) {
+      splitHorizontal = true;
+    } else if(partition.height > partition.width && partition.height / partition.width >= 1.25f) {
+      splitHorizontal = false;
+    }
 
     int max = (splitHorizontal ? partition.height : partition.width) - MIN_PARTITION_SIZE;
 
@@ -140,48 +191,48 @@ class BSPNode {
     if(w < 0) {
       if(h < 0) {
         if(randomBoolean()) {
-          corridors.add(new Room(pointB.x, pointA.y, abs(w), CORRIDOR_SIZE));
-          corridors.add(new Room(pointB.x, pointB.y, CORRIDOR_SIZE, abs(h)));
+          corridors.add(new Room(pointB.x, pointA.y, abs(w) + CORRIDOR_SIZE, CORRIDOR_SIZE));
+          corridors.add(new Room(pointB.x, pointB.y, CORRIDOR_SIZE, abs(h) + CORRIDOR_SIZE));
         } else {
-          corridors.add(new Room(pointB.x, pointB.y, abs(w), CORRIDOR_SIZE));
-          corridors.add(new Room(pointA.x, pointB.y, CORRIDOR_SIZE, abs(h)));
+          corridors.add(new Room(pointB.x, pointB.y, abs(w) + CORRIDOR_SIZE, CORRIDOR_SIZE));
+          corridors.add(new Room(pointA.x, pointB.y, CORRIDOR_SIZE, abs(h) + CORRIDOR_SIZE));
         }
       } else if (h > 0) {
         if(randomBoolean()) {
-          corridors.add(new Room(pointB.x, pointA.y, abs(w), CORRIDOR_SIZE));
-          corridors.add(new Room(pointB.x, pointA.y, CORRIDOR_SIZE, abs(h)));
+          corridors.add(new Room(pointB.x, pointA.y, abs(w) + CORRIDOR_SIZE, CORRIDOR_SIZE));
+          corridors.add(new Room(pointB.x, pointA.y, CORRIDOR_SIZE, abs(h) + CORRIDOR_SIZE));
         } else {
-          corridors.add(new Room(pointB.x, pointB.y, abs(w), CORRIDOR_SIZE));
-          corridors.add(new Room(pointA.x, pointA.y, CORRIDOR_SIZE, abs(h)));
+          corridors.add(new Room(pointB.x, pointB.y, abs(w) + CORRIDOR_SIZE, CORRIDOR_SIZE));
+          corridors.add(new Room(pointA.x, pointA.y, CORRIDOR_SIZE, abs(h) + CORRIDOR_SIZE));
         }
       } else {
-        corridors.add(new Room(pointB.x, pointB.y, abs(w), CORRIDOR_SIZE));
+        corridors.add(new Room(pointB.x, pointB.y, abs(w) + CORRIDOR_SIZE, CORRIDOR_SIZE));
       }
     } else if (w > 0) {
         if (h < 0) {
           if (randomBoolean()){
-            corridors.add(new Room(pointA.x, pointB.y, abs(w), CORRIDOR_SIZE));
-            corridors.add(new Room(pointA.x, pointB.y, CORRIDOR_SIZE, abs(h)));
+            corridors.add(new Room(pointA.x, pointB.y, abs(w) + CORRIDOR_SIZE, CORRIDOR_SIZE));
+            corridors.add(new Room(pointA.x, pointB.y, CORRIDOR_SIZE, abs(h) + CORRIDOR_SIZE));
           } else {
-            corridors.add(new Room(pointA.x, pointA.y, abs(w), CORRIDOR_SIZE));
-            corridors.add(new Room(pointB.x, pointB.y, CORRIDOR_SIZE, abs(h)));
+            corridors.add(new Room(pointA.x, pointA.y, abs(w) + CORRIDOR_SIZE, CORRIDOR_SIZE));
+            corridors.add(new Room(pointB.x, pointB.y, CORRIDOR_SIZE, abs(h) + CORRIDOR_SIZE));
           }
       } else if (h > 0) {
           if (randomBoolean()) {
-            corridors.add(new Room(pointA.x, pointA.y, abs(w), CORRIDOR_SIZE));
-            corridors.add(new Room(pointB.x, pointA.y, CORRIDOR_SIZE, abs(h)));
+            corridors.add(new Room(pointA.x, pointA.y, abs(w) + CORRIDOR_SIZE, CORRIDOR_SIZE));
+            corridors.add(new Room(pointB.x, pointA.y, CORRIDOR_SIZE, abs(h) + CORRIDOR_SIZE));
           } else {
-            corridors.add(new Room(pointA.x, pointB.y, abs(w), CORRIDOR_SIZE));
-            corridors.add(new Room(pointA.x, pointA.y, CORRIDOR_SIZE, abs(h)));
+            corridors.add(new Room(pointA.x, pointB.y, abs(w) + CORRIDOR_SIZE, CORRIDOR_SIZE));
+            corridors.add(new Room(pointA.x, pointA.y, CORRIDOR_SIZE, abs(h) + CORRIDOR_SIZE));
           }
         } else {
-            corridors.add(new Room(pointA.x, pointA.y, abs(w), CORRIDOR_SIZE));
+            corridors.add(new Room(pointA.x, pointA.y, abs(w) + CORRIDOR_SIZE, CORRIDOR_SIZE));
         }
     } else {
       if (h < 0) {
-        corridors.add(new Room(pointB.x, pointB.y, CORRIDOR_SIZE, abs(h)));
+        corridors.add(new Room(pointB.x, pointB.y, CORRIDOR_SIZE, abs(h) + CORRIDOR_SIZE));
       } else if (h > 0) {
-        corridors.add(new Room(pointA.x, pointA.y, CORRIDOR_SIZE, abs(h)));
+        corridors.add(new Room(pointA.x, pointA.y, CORRIDOR_SIZE, abs(h) + CORRIDOR_SIZE));
       }
     }
   }
@@ -316,7 +367,64 @@ class Partition {
     }
 }
 class Player {
-  
+
+  final int PLAYER_SPEED = displayWidth/1000;
+  final int PLAYER_RADIUS = displayWidth/50;
+
+  final PVector NORTH = new PVector(0,-PLAYER_SPEED),
+                SOUTH = new PVector(0, PLAYER_SPEED),
+                EAST =  new PVector(PLAYER_SPEED, 0),
+                WEST = new PVector(-PLAYER_SPEED, 0);
+
+
+  PVector position;
+  PVector velocity;
+
+  Player(int x, int y) {
+    this.position = new PVector(x, y);
+    this.velocity = new PVector(0,0);
+  }
+
+  public void move(int i) {
+    switch (i) {
+      case 1:
+        velocity.y -= PLAYER_SPEED;
+        break;
+      case 2:
+        velocity.y += PLAYER_SPEED;
+        break;
+      case 3:
+        velocity.x += PLAYER_SPEED;
+        break;
+      case 4:
+        velocity.x -= PLAYER_SPEED;
+        break;
+      default:
+        break;
+    }
+  }
+
+  public void update() {
+    velocity.limit(2*PLAYER_SPEED);
+    velocity.x *= 0.95f;
+    velocity.y *= 0.95f;
+    position.add(velocity);
+
+  }
+
+  public void display() {
+    fill(255,0,0);
+    circle(position.x, position.y, PLAYER_RADIUS);
+  }
+
+
+  public void draw(){
+    update();
+    display();
+  }
+
+
+
 }
 class Room {
   PVector position;

@@ -23,11 +23,11 @@ class BSPNode {
 
     boolean splitHorizontal = randomBoolean();
 
-    // if(partition.width > partition.height && partition.width / partition.height >=1.25) {
-    //   splitHorizontal = false;
-    // } else if(partition.height > partition.width && partition.height / partition.width >= 1.25) {
-    //   splitHorizontal = true;
-    // }
+    if(partition.width > partition.height && partition.width / partition.height >=1.25) {
+      splitHorizontal = false;
+    } else if(partition.height > partition.width && partition.height / partition.width >= 1.25) {
+      splitHorizontal = true;
+    }
 
     int max = (splitHorizontal ? partition.height : partition.width) - MIN_PARTITION_SIZE;
 
@@ -112,48 +112,48 @@ class BSPNode {
     if(w < 0) {
       if(h < 0) {
         if(randomBoolean()) {
-          corridors.add(new Room(pointB.x, pointA.y, abs(w), CORRIDOR_SIZE));
-          corridors.add(new Room(pointB.x, pointB.y, CORRIDOR_SIZE, abs(h)));
+          corridors.add(new Room(pointB.x, pointA.y, abs(w) + CORRIDOR_SIZE, CORRIDOR_SIZE));
+          corridors.add(new Room(pointB.x, pointB.y, CORRIDOR_SIZE, abs(h) + CORRIDOR_SIZE));
         } else {
-          corridors.add(new Room(pointB.x, pointB.y, abs(w), CORRIDOR_SIZE));
-          corridors.add(new Room(pointA.x, pointB.y, CORRIDOR_SIZE, abs(h)));
+          corridors.add(new Room(pointB.x, pointB.y, abs(w) + CORRIDOR_SIZE, CORRIDOR_SIZE));
+          corridors.add(new Room(pointA.x, pointB.y, CORRIDOR_SIZE, abs(h) + CORRIDOR_SIZE));
         }
       } else if (h > 0) {
         if(randomBoolean()) {
-          corridors.add(new Room(pointB.x, pointA.y, abs(w), CORRIDOR_SIZE));
-          corridors.add(new Room(pointB.x, pointA.y, CORRIDOR_SIZE, abs(h)));
+          corridors.add(new Room(pointB.x, pointA.y, abs(w) + CORRIDOR_SIZE, CORRIDOR_SIZE));
+          corridors.add(new Room(pointB.x, pointA.y, CORRIDOR_SIZE, abs(h) + CORRIDOR_SIZE));
         } else {
-          corridors.add(new Room(pointB.x, pointB.y, abs(w), CORRIDOR_SIZE));
-          corridors.add(new Room(pointA.x, pointA.y, CORRIDOR_SIZE, abs(h)));
+          corridors.add(new Room(pointB.x, pointB.y, abs(w) + CORRIDOR_SIZE, CORRIDOR_SIZE));
+          corridors.add(new Room(pointA.x, pointA.y, CORRIDOR_SIZE, abs(h) + CORRIDOR_SIZE));
         }
       } else {
-        corridors.add(new Room(pointB.x, pointB.y, abs(w), CORRIDOR_SIZE));
+        corridors.add(new Room(pointB.x, pointB.y, abs(w) + CORRIDOR_SIZE, CORRIDOR_SIZE));
       }
     } else if (w > 0) {
         if (h < 0) {
           if (randomBoolean()){
-            corridors.add(new Room(pointA.x, pointB.y, abs(w), CORRIDOR_SIZE));
-            corridors.add(new Room(pointA.x, pointB.y, CORRIDOR_SIZE, abs(h)));
+            corridors.add(new Room(pointA.x, pointB.y, abs(w) + CORRIDOR_SIZE, CORRIDOR_SIZE));
+            corridors.add(new Room(pointA.x, pointB.y, CORRIDOR_SIZE, abs(h) + CORRIDOR_SIZE));
           } else {
-            corridors.add(new Room(pointA.x, pointA.y, abs(w), CORRIDOR_SIZE));
-            corridors.add(new Room(pointB.x, pointB.y, CORRIDOR_SIZE, abs(h)));
+            corridors.add(new Room(pointA.x, pointA.y, abs(w) + CORRIDOR_SIZE, CORRIDOR_SIZE));
+            corridors.add(new Room(pointB.x, pointB.y, CORRIDOR_SIZE, abs(h) + CORRIDOR_SIZE));
           }
       } else if (h > 0) {
           if (randomBoolean()) {
-            corridors.add(new Room(pointA.x, pointA.y, abs(w), CORRIDOR_SIZE));
-            corridors.add(new Room(pointB.x, pointA.y, CORRIDOR_SIZE, abs(h)));
+            corridors.add(new Room(pointA.x, pointA.y, abs(w) + CORRIDOR_SIZE, CORRIDOR_SIZE));
+            corridors.add(new Room(pointB.x, pointA.y, CORRIDOR_SIZE, abs(h) + CORRIDOR_SIZE));
           } else {
-            corridors.add(new Room(pointA.x, pointB.y, abs(w), CORRIDOR_SIZE));
-            corridors.add(new Room(pointA.x, pointA.y, CORRIDOR_SIZE, abs(h)));
+            corridors.add(new Room(pointA.x, pointB.y, abs(w) + CORRIDOR_SIZE, CORRIDOR_SIZE));
+            corridors.add(new Room(pointA.x, pointA.y, CORRIDOR_SIZE, abs(h) + CORRIDOR_SIZE));
           }
         } else {
-            corridors.add(new Room(pointA.x, pointA.y, abs(w), CORRIDOR_SIZE));
+            corridors.add(new Room(pointA.x, pointA.y, abs(w) + CORRIDOR_SIZE, CORRIDOR_SIZE));
         }
     } else {
       if (h < 0) {
-        corridors.add(new Room(pointB.x, pointB.y, CORRIDOR_SIZE, abs(h)));
+        corridors.add(new Room(pointB.x, pointB.y, CORRIDOR_SIZE, abs(h) + CORRIDOR_SIZE));
       } else if (h > 0) {
-        corridors.add(new Room(pointA.x, pointA.y, CORRIDOR_SIZE, abs(h)));
+        corridors.add(new Room(pointA.x, pointA.y, CORRIDOR_SIZE, abs(h) + CORRIDOR_SIZE));
       }
     }
   }

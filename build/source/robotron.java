@@ -19,6 +19,7 @@ Map map;
 public void setup () {
   
   background(0);
+  cursor(CROSS);
   map = new Map();
 }
 
@@ -92,7 +93,7 @@ class BSPNode {
       PVector roomSize;
       PVector roomPosition;
       roomSize = new PVector(random(3 * partition.width/4, partition.width - partition.width/8), random(3 * partition.height/4, partition.height - partition.height/8));
-      roomPosition = new PVector(random(partition.position.x, partition.width - roomSize.x), random(partition.position.y, partition.height - roomSize.y));
+      roomPosition = new PVector(random(partition.position.x + CORRIDOR_SIZE, partition.width - roomSize.x), random(partition.position.y + CORRIDOR_SIZE, partition.height - roomSize.y));
       partition.room = new Room(roomPosition.x, roomPosition.y, roomSize.x, roomSize.y);
     }
   }
@@ -313,6 +314,9 @@ class Partition {
       room.draw();
     }
     }
+}
+class Player {
+  
 }
 class Room {
   PVector position;

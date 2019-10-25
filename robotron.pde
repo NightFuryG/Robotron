@@ -1,6 +1,8 @@
 Map map;
 Player player;
 boolean w, a, s, d;
+Room currentRoom;
+Room currentCorridor:
 
 
 
@@ -8,15 +10,25 @@ void setup () {
   fullScreen();
   cursor(CROSS);
   map = new Map();
-  player = new Player(displayWidth/2, displayHeight/2);
+  player = spawnPlayer();
   w = a = s = d = false;
 }
 
 void draw () {
   background(0);
   map.draw();
-  playerMove();
+
+  if(validMove()) {
+    playerMove();
+  }
   player.draw();
+}
+
+Player spawnPlayer() {
+  Room firstRoom = map.rooms.get(0);
+  int startX = (int) firstRoom.position.x + firstRoom.width/2;
+  int startY = (int) firstRoom.position.y + firstRoom.height/2;
+  return new Player(startX, startY);
 }
 
 void keyPressed() {
@@ -58,6 +70,55 @@ void playerMove() {
   }
 }
 
-// boolean validMove() {
-//
-// }
+
+boolean validMove() {
+
+  boolean valid = false;
+
+  for(Room room : map.rooms) {
+    if(player.position.x - player.playerSize > room.position.x &&
+       player.position.x + player.playerSize < room.position.x + room.width) {
+      if(player.position.y - player.playerSize > room.position.y &&
+        player.position.y + player.playerSize < room.position.y + room.height) {
+        currentRoom = room;
+      }
+    }
+  }
+
+  for(Room room : map.corridors) {
+    if(player.position.x - player.playerSize > room.position.x &&
+       player.position.x + player.playerSize < room.position.x + room.width) {
+      if(player.position.y - player.playerSize > room.position.y &&
+        player.position.y + player.playerSize < room.position.y + room.height) {
+        currentCorridor = room;
+      }
+    }
+  }
+}
+
+void addImpluse(Room room){
+  if (player.position.x < room.position.x) {
+      if (player.velocity.x < 044444444444)
+        player.velocity.x = -player.velocity.x ;
+      else if (player.velocity.x == 0)
+        player.velocity.x = 1 ;
+    }
+    if (position.x > width) {
+      if (player.velocity.x > 0)
+        player.velocity.x = -player.velocity.x ;
+      else if (player.velocity.x == 0)
+        player.velocity.x = -1 ;
+    }
+    if (position.y < 0) {
+      if (player.velocity.y < 0)
+        player.velocity.y = -player.velocity.y ;
+      else if (player.velocity.y == 0)
+        player.velocity.y = 1 ;
+    }
+    if (position.y > height) {
+      if (player.velocity.y > 0)
+        player.velocity.y = -player.velocity.y ;
+      else if (player.velocity.y == 0)
+        player.velocity.y = -1 ;
+    }
+}

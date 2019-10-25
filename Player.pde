@@ -1,6 +1,6 @@
 class Player {
 
-  final int PLAYER_SPEED = displayWidth/1000;
+  final int PLAYER_SPEED = displayWidth/750;
   final int PLAYER_RADIUS = displayWidth/50;
 
   final PVector NORTH = new PVector(0,-PLAYER_SPEED),
@@ -11,10 +11,12 @@ class Player {
 
   PVector position;
   PVector velocity;
+  int playerSize;
 
   Player(int x, int y) {
     this.position = new PVector(x, y);
     this.velocity = new PVector(0,0);
+    this.playerSize = PLAYER_RADIUS;
   }
 
   void move(int i) {
@@ -46,7 +48,7 @@ class Player {
 
   void display() {
     fill(255,0,0);
-    circle(position.x, position.y, PLAYER_RADIUS);
+    circle(position.x, position.y, playerSize);
   }
 
 

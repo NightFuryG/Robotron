@@ -31,6 +31,7 @@ class Map {
     }
 
     System.out.println(rooms.size());
+    System.out.println(corridors.size());
   }
 
 

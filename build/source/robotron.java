@@ -19,17 +19,18 @@ final int BLACK = color(0);
 Map map;
 Player player;
 boolean w, a, s, d;
-Room currentRoom;
-Room currentCorridor;
+ArrayList<Bullet> bullets;
 
 
 
 public void setup () {
   
   cursor(CROSS);
+  frameRate(200);
   map = new Map();
   player = spawnPlayer();
   w = a = s = d = false;
+  bullets = new ArrayList();
 }
 
 public void draw () {
@@ -38,6 +39,8 @@ public void draw () {
   ensurePlayerInArea();
   playerMove();
   player.draw();
+  removeMissedBullets();
+  drawBullets();
 }
 
 public Player spawnPlayer() {
@@ -69,6 +72,11 @@ public void keyReleased() {
   } else if (key == 'a') {
     a = false;
   }
+}
+
+public void mousePressed(){
+  bullets.add(new Bullet(player.position.x, player.position.y, mouseX, mouseY));
+  System.out.println(bullets.size());
 }
 
 public void playerMove() {
@@ -159,6 +167,21 @@ public int getDownColor() {
 
 public boolean checkNotBlack(int inColor){
   return inColor != BLACK;
+}
+
+public void drawBullets() {
+  for(Bullet bullet : bullets) {
+    bullet.draw();
+  }
+}
+
+public void removeMissedBullets() {
+  for(Bullet bullet : new ArrayList<Bullet>(bullets)) {
+    int detectedColor = get((int) bullet.position.x, (int) bullet.position.y);
+    if(!checkNotBlack(detectedColor)) {
+      bullets.remove(bullet);
+    }
+  }
 }
 class BSPNode {
 
@@ -378,6 +401,57 @@ class BSPTree {
 
 
 }
+class Bullet {
+
+  final int topSpeed = displayWidth/300;
+  final int bulletSize = displayWidth/300;
+
+  PVector position;
+  PVector destination;
+  PVector direction;
+  PVector velocity;
+  PVector acceleration;
+
+  Bullet(float startX, float startY, int endX, int endY) {
+    this.position = new PVector(startX, startY);
+    this.destination = new PVector(endX, endY);
+    this.velocity = new PVector(0,0);
+    this.direction = calculateDirection();
+    this.acceleration = calculateAcceleration();
+
+
+  }
+
+  public PVector calculateDirection() {
+    return PVector.sub(destination, position);
+  }
+
+  public PVector calculateAcceleration() {
+    PVector a = this.direction.normalize();
+    a = this.direction.mult(0.5f);
+    return a;
+  }
+
+  public void checkWalls() {
+
+  }
+
+  public void update(){
+    velocity.add(acceleration);
+    velocity.limit(topSpeed);
+    position.add(velocity);
+  }
+
+  public void display(){
+    fill(255,0,0);
+    circle(position.x, position.y, bulletSize);
+  }
+
+  public void draw(){
+    update();
+    display();
+  }
+}
 class Line {
   PVector start;
   PVector end;
@@ -398,8 +472,6 @@ class Map {
     rooms = new ArrayList();
     corridors = new ArrayList();
     addRooms();
-    printRooms(rooms);
-    printRooms(corridors);
   }
 
   public void draw(){
@@ -423,16 +495,13 @@ class Map {
 
   }
 
+  //useful printmethod;
   public void printRooms(ArrayList<Room> roomList){
     for(Room room : roomList) {
       System.out.println(room.position + " " + room.width + " " + room.height);
     }
-
     System.out.println();
   }
-
-
-
 }
 class Partition {
   PVector position;

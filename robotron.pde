@@ -1,19 +1,21 @@
-final color BLACK = color(0);
+final color BLACK = color(0),
+            WHITE = color(255);
 
 Map map;
 Player player;
 boolean w, a, s, d;
-Room currentRoom;
-Room currentCorridor;
+ArrayList<Bullet> bullets;
 
 
 
 void setup () {
   fullScreen();
   cursor(CROSS);
+  frameRate(200);
   map = new Map();
   player = spawnPlayer();
   w = a = s = d = false;
+  bullets = new ArrayList();
 }
 
 void draw () {
@@ -22,6 +24,8 @@ void draw () {
   ensurePlayerInArea();
   playerMove();
   player.draw();
+  removeMissedBullets();
+  drawBullets();
 }
 
 Player spawnPlayer() {
@@ -53,6 +57,11 @@ void keyReleased() {
   } else if (key == 'a') {
     a = false;
   }
+}
+
+void mousePressed(){
+  bullets.add(new Bullet(player.position.x, player.position.y, mouseX, mouseY));
+  System.out.println(bullets.size());
 }
 
 void playerMove() {
@@ -143,4 +152,23 @@ color getDownColor() {
 
 boolean checkNotBlack(color inColor){
   return inColor != BLACK;
+}
+
+boolean checkWhite(color inColor) {
+  return inColor == WHITE;
+}
+
+void drawBullets() {
+  for(Bullet bullet : bullets) {
+    bullet.draw();
+  }
+}
+
+void removeMissedBullets() {
+  for(Bullet bullet : new ArrayList<Bullet>(bullets)) {
+    color detectedColor = get((int) bullet.position.x, (int) bullet.position.y);
+    if(!checkNotBlack(detectedColor)) {
+      bullets.remove(bullet);
+    }
+  }
 }

@@ -8,6 +8,7 @@ Player player;
 boolean w, a, s, d;
 ArrayList<Bullet> bullets;
 ArrayList<Human> family;
+int score;
 
 
 
@@ -18,6 +19,7 @@ void setup () {
   map = new Map();
   player = spawnPlayer();
   w = a = s = d = false;
+  score = 0;
   bullets = new ArrayList();
   family = new ArrayList();
   spawnFamily();
@@ -33,6 +35,10 @@ void draw () {
   removeMissedBullets();
   drawBullets();
   drawFamily();
+  detectPlayerFamilyCollision();
+  if(score > 0) {
+    System.out.println(score);
+  }
 }
 
 
@@ -237,6 +243,22 @@ void spawnFamilyMember(int i, PVector randomPointInRoom){
     }
 }
 
+//ADDSCORE
 void detectPlayerFamilyCollision(){
-  
+  float playerX = player.position.x;
+  float playerY = player.position.y;
+  int playerRadius = player.playerSize;
+
+  for(Human human : new ArrayList<Human>(family)) {
+    float humanX = human.position.x;
+    float humanY = human.position.y;
+    int humanRadius = human.humanSize;
+    if(dist(playerX, playerY, humanX, humanY) < playerRadius/2 + humanRadius/2) {
+      if(human.member == 'F') {
+        score += 1000;
+      }
+      family.remove(human);
+      System.out.println("collision");
+    }
+  }
 }

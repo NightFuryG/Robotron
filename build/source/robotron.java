@@ -24,6 +24,7 @@ Player player;
 boolean w, a, s, d;
 ArrayList<Bullet> bullets;
 ArrayList<Human> family;
+int score;
 
 
 
@@ -34,10 +35,10 @@ public void setup () {
   map = new Map();
   player = spawnPlayer();
   w = a = s = d = false;
+  score = 0;
   bullets = new ArrayList();
   family = new ArrayList();
   spawnFamily();
-  System.out.println(family.size());
 
 }
 
@@ -50,65 +51,13 @@ public void draw () {
   removeMissedBullets();
   drawBullets();
   drawFamily();
-}
-
-public void spawnFamily(){
-
-  int randomRoomIndex;
-  ArrayList<Integer> selectedRooms = new ArrayList();
-  int humanCount = 0;
-  int boundarySpace = displayWidth/HUMAN_RADIUS_PROPORTION;
-
-  while(humanCount < 3) {
-
-    randomRoomIndex = map.randomRoomIndex();
-
-    if (!selectedRooms.contains(randomRoomIndex)) {
-      Room randomRoom = map.rooms.get(randomRoomIndex);
-
-      float x1 = (randomRoom.position.x+(2*boundarySpace));
-
-      System.out.println("Random.position.x " + randomRoom.position.x);
-      System.out.println("2*HUMAN_RADIUS " + (2*boundarySpace));
-      System.out.println(x1);
-      float x2 = (randomRoom.position.x+randomRoom.width-(4*boundarySpace));
-
-      float y1 = (randomRoom.position.y+(2*boundarySpace));
-      float y2 = (randomRoom.position.y+randomRoom.height-(4*boundarySpace));
-
-      float randomX = random(x1, x2);
-      float randomY = random(y1, y2);
-
-      PVector randomPointInRoom = new PVector(randomX, randomY);
-
-      randomRoom.printDetails();
-      System.out.println("randomX: " + randomX + " " + "randomY: " + randomY);
-          System.out.println();
-
-      spawnFamilyMember(humanCount, randomPointInRoom);
-      humanCount++;
-      selectedRooms.add(randomRoomIndex);
-
-    }
-
+  detectPlayerFamilyCollision();
+  if(score > 0) {
+    System.out.println(score);
   }
 }
 
-public void spawnFamilyMember(int i, PVector randomPointInRoom){
-    switch(i) {
-      case 0:
-        family.add(new Human(randomPointInRoom.x, randomPointInRoom.y, 'F'));
-        break;
-      case 1:
-        family.add(new Human(randomPointInRoom.x, randomPointInRoom.y, 'M'));
-        break;
-      case 2:
-        family.add(new Human(randomPointInRoom.x, randomPointInRoom.y, 'C'));
-        break;
-      default:
-        break;
-    }
-}
+
 
 public Player spawnPlayer() {
   Room firstRoom = map.rooms.get(0);
@@ -257,6 +206,75 @@ public void removeMissedBullets() {
     int detectedColor = get((int) bullet.position.x, (int) bullet.position.y);
     if(!checkNotBlack(detectedColor)) {
       bullets.remove(bullet);
+    }
+  }
+}
+
+public void spawnFamily(){
+
+  int randomRoomIndex;
+  ArrayList<Integer> selectedRooms = new ArrayList();
+  int humanCount = 0;
+  int boundarySpace = displayWidth/HUMAN_RADIUS_PROPORTION;
+
+  while(humanCount < 3) {
+
+    randomRoomIndex = map.randomRoomIndex();
+
+    if (!selectedRooms.contains(randomRoomIndex)) {
+      Room randomRoom = map.rooms.get(randomRoomIndex);
+
+      float x1 = (randomRoom.position.x +(2 * boundarySpace));
+      float x2 = (randomRoom.position.x + randomRoom.width - (4 * boundarySpace));
+
+      float y1 = (randomRoom.position.y + (2 * boundarySpace));
+      float y2 = (randomRoom.position.y + randomRoom.height - (4 * boundarySpace));
+
+      float randomX = random(x1, x2);
+      float randomY = random(y1, y2);
+
+      PVector randomPointInRoom = new PVector(randomX, randomY);
+      spawnFamilyMember(humanCount, randomPointInRoom);
+      humanCount++;
+      selectedRooms.add(randomRoomIndex);
+
+    }
+
+  }
+}
+
+public void spawnFamilyMember(int i, PVector randomPointInRoom){
+    switch(i) {
+      case 0:
+        family.add(new Human(randomPointInRoom.x, randomPointInRoom.y, 'F'));
+        break;
+      case 1:
+        family.add(new Human(randomPointInRoom.x, randomPointInRoom.y, 'M'));
+        break;
+      case 2:
+        family.add(new Human(randomPointInRoom.x, randomPointInRoom.y, 'C'));
+        break;
+      default:
+        break;
+    }
+}
+
+//ADDSCORE
+public void detectPlayerFamilyCollision(){
+  float playerX = player.position.x;
+  float playerY = player.position.y;
+  int playerRadius = player.playerSize;
+
+  for(Human human : new ArrayList<Human>(family)) {
+    float humanX = human.position.x;
+    float humanY = human.position.y;
+    int humanRadius = human.humanSize;
+    if(dist(playerX, playerY, humanX, humanY) < playerRadius/2 + humanRadius/2) {
+      if(human.member == 'F') {
+        score += 1000;
+      }
+      family.remove(human);
+      System.out.println("collision");
     }
   }
 }

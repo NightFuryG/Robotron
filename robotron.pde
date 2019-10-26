@@ -1,7 +1,7 @@
 final color BLACK = color(0),
             WHITE = color(255);
 
-final int HUMAN_RADIUS = displayWidth/50;
+final int HUMAN_RADIUS_PROPORTION = 50;
 
 Map map;
 Player player;
@@ -10,16 +10,18 @@ ArrayList<Bullet> bullets;
 ArrayList<Human> family;
 
 
+
 void setup () {
   fullScreen();
   cursor(CROSS);
+  smooth();
   map = new Map();
   player = spawnPlayer();
   w = a = s = d = false;
   bullets = new ArrayList();
   family = new ArrayList();
   spawnFamily();
-  System.out.println(family.size());
+
 }
 
 void draw () {
@@ -33,52 +35,7 @@ void draw () {
   drawFamily();
 }
 
-void spawnFamily(){
 
-  int randomRoomIndex;
-  int previousRoomIndex = 0;
-  int humanCount = 0;
-
-  while(humanCount < 3) {
-
-    randomRoomIndex = map.randomRoomIndex();
-
-    if (previousRoomIndex != randomRoomIndex) {
-      Room randomRoom = map.rooms.get(randomRoomIndex);
-
-      float x1 = randomRoom.position.x + 2 * HUMAN_RADIUS;
-      float x2 = randomRoom.position.x + randomRoom.width - 4 * HUMAN_RADIUS;
-
-      float y1 = randomRoom.position.y + 2 * HUMAN_RADIUS;
-      float y2 = randomRoom.position.y + randomRoom.height - 4 * HUMAN_RADIUS;
-
-      PVector randomPointInRoom = new PVector(random(x1, x2), random(y1, y2));
-
-      spawnFamilyMember(humanCount, randomPointInRoom);
-      humanCount++;
-      System.out.println("Success");
-    }
-
-    previousRoomIndex = randomRoomIndex;
-
-  }
-}
-
-void spawnFamilyMember(int i, PVector randomPointInRoom){
-    switch(i) {
-      case 0:
-        family.add(new Human(randomPointInRoom.x, randomPointInRoom.y, 'F'));
-        break;
-      case 1:
-        family.add(new Human(randomPointInRoom.x, randomPointInRoom.y, 'M'));
-        break;
-      case 2:
-        family.add(new Human(randomPointInRoom.x, randomPointInRoom.y, 'C'));
-        break;
-      default:
-        break;
-    }
-}
 
 Player spawnPlayer() {
   Room firstRoom = map.rooms.get(0);
@@ -229,4 +186,57 @@ void removeMissedBullets() {
       bullets.remove(bullet);
     }
   }
+}
+
+void spawnFamily(){
+
+  int randomRoomIndex;
+  ArrayList<Integer> selectedRooms = new ArrayList();
+  int humanCount = 0;
+  int boundarySpace = displayWidth/HUMAN_RADIUS_PROPORTION;
+
+  while(humanCount < 3) {
+
+    randomRoomIndex = map.randomRoomIndex();
+
+    if (!selectedRooms.contains(randomRoomIndex)) {
+      Room randomRoom = map.rooms.get(randomRoomIndex);
+
+      float x1 = (randomRoom.position.x +(2 * boundarySpace));
+      float x2 = (randomRoom.position.x + randomRoom.width - (4 * boundarySpace));
+
+      float y1 = (randomRoom.position.y + (2 * boundarySpace));
+      float y2 = (randomRoom.position.y + randomRoom.height - (4 * boundarySpace));
+
+      float randomX = random(x1, x2);
+      float randomY = random(y1, y2);
+
+      PVector randomPointInRoom = new PVector(randomX, randomY);
+      spawnFamilyMember(humanCount, randomPointInRoom);
+      humanCount++;
+      selectedRooms.add(randomRoomIndex);
+
+    }
+
+  }
+}
+
+void spawnFamilyMember(int i, PVector randomPointInRoom){
+    switch(i) {
+      case 0:
+        family.add(new Human(randomPointInRoom.x, randomPointInRoom.y, 'F'));
+        break;
+      case 1:
+        family.add(new Human(randomPointInRoom.x, randomPointInRoom.y, 'M'));
+        break;
+      case 2:
+        family.add(new Human(randomPointInRoom.x, randomPointInRoom.y, 'C'));
+        break;
+      default:
+        break;
+    }
+}
+
+void detectPlayerFamilyCollision(){
+  
 }

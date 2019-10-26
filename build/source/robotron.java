@@ -17,7 +17,7 @@ public class robotron extends PApplet {
 final int BLACK = color(0),
             WHITE = color(255);
 
-final int HUMAN_RADIUS = displayWidth/50;
+final int HUMAN_RADIUS_PROPORTION = 50;
 
 Map map;
 Player player;
@@ -26,9 +26,11 @@ ArrayList<Bullet> bullets;
 ArrayList<Human> family;
 
 
+
 public void setup () {
   
   cursor(CROSS);
+  
   map = new Map();
   player = spawnPlayer();
   w = a = s = d = false;
@@ -36,6 +38,7 @@ public void setup () {
   family = new ArrayList();
   spawnFamily();
   System.out.println(family.size());
+
 }
 
 public void draw () {
@@ -52,30 +55,41 @@ public void draw () {
 public void spawnFamily(){
 
   int randomRoomIndex;
-  int previousRoomIndex = 0;
+  ArrayList<Integer> selectedRooms = new ArrayList();
   int humanCount = 0;
+  int boundarySpace = displayWidth/HUMAN_RADIUS_PROPORTION;
 
   while(humanCount < 3) {
 
     randomRoomIndex = map.randomRoomIndex();
 
-    if (previousRoomIndex != randomRoomIndex) {
+    if (!selectedRooms.contains(randomRoomIndex)) {
       Room randomRoom = map.rooms.get(randomRoomIndex);
 
-      float x1 = randomRoom.position.x + 2 * HUMAN_RADIUS;
-      float x2 = randomRoom.position.x + randomRoom.width - 4 * HUMAN_RADIUS;
+      float x1 = (randomRoom.position.x+(2*boundarySpace));
 
-      float y1 = randomRoom.position.y + 2 * HUMAN_RADIUS;
-      float y2 = randomRoom.position.y + randomRoom.height - 4 * HUMAN_RADIUS;
+      System.out.println("Random.position.x " + randomRoom.position.x);
+      System.out.println("2*HUMAN_RADIUS " + (2*boundarySpace));
+      System.out.println(x1);
+      float x2 = (randomRoom.position.x+randomRoom.width-(4*boundarySpace));
 
-      PVector randomPointInRoom = new PVector(random(x1, x2), random(y1, y2));
+      float y1 = (randomRoom.position.y+(2*boundarySpace));
+      float y2 = (randomRoom.position.y+randomRoom.height-(4*boundarySpace));
+
+      float randomX = random(x1, x2);
+      float randomY = random(y1, y2);
+
+      PVector randomPointInRoom = new PVector(randomX, randomY);
+
+      randomRoom.printDetails();
+      System.out.println("randomX: " + randomX + " " + "randomY: " + randomY);
+          System.out.println();
 
       spawnFamilyMember(humanCount, randomPointInRoom);
       humanCount++;
-      System.out.println("Success");
-    }
+      selectedRooms.add(randomRoomIndex);
 
-    previousRoomIndex = randomRoomIndex;
+    }
 
   }
 }
@@ -538,7 +552,7 @@ class Human {
     fill(255,0,0);
     circle(position.x, position.y, humanSize);
     fill(255);
-    textAlign(CENTER);
+    textAlign(CENTER, CENTER);
     text(member, position.x, position.y);
   }
 
@@ -706,8 +720,15 @@ class Room {
     noStroke();
     rect(position.x, position.y, width, height);
   }
+
+  public void printDetails(){
+    System.out.println("Left Edge: " + position.x);
+    System.out.println("Right Edge: " + (position.x + width));
+    System.out.println("Top Edge: " + position.y);
+    System.out.println("Botoom Edge: " + (position.y + height));
+  }
 }
-  public void settings() {  fullScreen(); }
+  public void settings() {  fullScreen();  smooth(); }
   static public void main(String[] passedArgs) {
     String[] appletArgs = new String[] { "robotron" };
     if (passedArgs != null) {

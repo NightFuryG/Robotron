@@ -21,7 +21,7 @@ class Human {
     fill(255,0,0);
     circle(position.x, position.y, humanSize);
     fill(255);
-    textAlign(CENTER);
+    textAlign(CENTER, CENTER);
     text(member, position.x, position.y);
   }
 

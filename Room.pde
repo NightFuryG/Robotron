@@ -14,4 +14,11 @@ class Room {
     noStroke();
     rect(position.x, position.y, width, height);
   }
+
+  void printDetails(){
+    System.out.println("Left Edge: " + position.x);
+    System.out.println("Right Edge: " + (position.x + width));
+    System.out.println("Top Edge: " + position.y);
+    System.out.println("Botoom Edge: " + (position.y + height));
+  }
 }

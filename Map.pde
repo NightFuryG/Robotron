@@ -30,10 +30,13 @@ class Map {
       }
     }
 
-    System.out.println(rooms.size());
-    System.out.println(corridors.size());
   }
 
-
-
+  //useful printmethod;
+  void printRooms(ArrayList<Room> roomList){
+    for(Room room : roomList) {
+      System.out.println(room.position + " " + room.width + " " + room.height);
+    }
+    System.out.println();
+  }
 }

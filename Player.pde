@@ -12,11 +12,13 @@ class Player {
   PVector position;
   PVector velocity;
   int playerSize;
+  int playerSpeed;
 
   Player(int x, int y) {
     this.position = new PVector(x, y);
     this.velocity = new PVector(0,0);
     this.playerSize = PLAYER_RADIUS;
+    this.playerSpeed = PLAYER_SPEED;
   }
 
   void move(int i) {
@@ -40,8 +42,8 @@ class Player {
 
   void update() {
     velocity.limit(2*PLAYER_SPEED);
-    velocity.x *= 0.95;
-    velocity.y *= 0.95;
+    velocity.x *= 0.90;
+    velocity.y *= 0.90;
     position.add(velocity);
 
   }

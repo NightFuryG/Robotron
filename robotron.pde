@@ -1,8 +1,10 @@
+final color BLACK = color(0);
+
 Map map;
 Player player;
 boolean w, a, s, d;
 Room currentRoom;
-Room currentCorridor:
+Room currentCorridor;
 
 
 
@@ -17,10 +19,8 @@ void setup () {
 void draw () {
   background(0);
   map.draw();
-
-  if(validMove()) {
-    playerMove();
-  }
+  ensurePlayerInArea();
+  playerMove();
   player.draw();
 }
 
@@ -57,68 +57,90 @@ void keyReleased() {
 
 void playerMove() {
   if(w) {
-    player.move(1);
+    if(checkNotBlack(getUpColor())){
+      player.move(1);
+    }
   }
   if(s) {
+    if(checkNotBlack(getDownColor())){
     player.move(2);
+    }
   }
   if(d) {
-    player.move(3);
+    if(checkNotBlack(getRightColor())) {
+      player.move(3);
+    }
   }
   if(a) {
-    player.move(4);
-  }
-}
-
-
-boolean validMove() {
-
-  boolean valid = false;
-
-  for(Room room : map.rooms) {
-    if(player.position.x - player.playerSize > room.position.x &&
-       player.position.x + player.playerSize < room.position.x + room.width) {
-      if(player.position.y - player.playerSize > room.position.y &&
-        player.position.y + player.playerSize < room.position.y + room.height) {
-        currentRoom = room;
-      }
-    }
-  }
-
-  for(Room room : map.corridors) {
-    if(player.position.x - player.playerSize > room.position.x &&
-       player.position.x + player.playerSize < room.position.x + room.width) {
-      if(player.position.y - player.playerSize > room.position.y &&
-        player.position.y + player.playerSize < room.position.y + room.height) {
-        currentCorridor = room;
-      }
+    if(checkNotBlack(getLeftColor())) {
+      player.move(4);
     }
   }
 }
 
-void addImpluse(Room room){
-  if (player.position.x < room.position.x) {
-      if (player.velocity.x < 044444444444)
-        player.velocity.x = -player.velocity.x ;
-      else if (player.velocity.x == 0)
-        player.velocity.x = 1 ;
+void ensurePlayerInArea(){
+
+  int cornerBounce = player.playerSize*10;
+
+  if(!checkNotBlack(getLeftColor())) {
+    if (player.velocity.x < 0) {
+      player.velocity.x = -player.velocity.x;
     }
-    if (position.x > width) {
-      if (player.velocity.x > 0)
-        player.velocity.x = -player.velocity.x ;
-      else if (player.velocity.x == 0)
-        player.velocity.x = -1 ;
+    else if (player.velocity.x >= 0) {
+      player.velocity.x = cornerBounce;
     }
-    if (position.y < 0) {
-      if (player.velocity.y < 0)
-        player.velocity.y = -player.velocity.y ;
-      else if (player.velocity.y == 0)
-        player.velocity.y = 1 ;
+  }
+  if(!checkNotBlack(getRightColor())){
+    if (player.velocity.x > 0) {
+      player.velocity.x = -player.velocity.x;
+    } else if (player.velocity.x <= 0) {
+        player.velocity.x = -cornerBounce;
     }
-    if (position.y > height) {
-      if (player.velocity.y > 0)
-        player.velocity.y = -player.velocity.y ;
-      else if (player.velocity.y == 0)
-        player.velocity.y = -1 ;
+  }
+  if(!checkNotBlack(getUpColor())){
+    if (player.velocity.y < 0) {
+      player.velocity.y = -player.velocity.y;
+    } else if (player.velocity.y >= 0) {
+        player.velocity.y = cornerBounce;
     }
+  }
+  if(!checkNotBlack(getDownColor())){
+    if (player.velocity.y > 0) {
+      player.velocity.y = -player.velocity.y;
+    } else if (player.velocity.y <= 0) {
+      player.velocity.y = -cornerBounce;
+    }
+  }
+}
+
+color getLeftColor() {
+  int leftX = (int) player.position.x - player.playerSize/2;
+  int leftY = (int) player.position.y;
+  color leftColor = get(leftX, leftY);
+  return leftColor;
+}
+
+color getRightColor() {
+  int rightX = (int) player.position.x + player.playerSize/2;
+  int rightY = (int) player.position.y;
+  color rightColor = get(rightX, rightY);
+  return rightColor;
+}
+
+color getUpColor() {
+  int upX = (int) player.position.x;
+  int upY = (int) player.position.y - player.playerSize/2;
+  color upColor = get(upX, upY);
+  return upColor;
+}
+
+color getDownColor() {
+  int downX = (int) player.position.x;
+  int downY= (int) player.position.y + player.playerSize/2;
+  color downColor = get(downX, downY);
+  return downColor;
+}
+
+boolean checkNotBlack(color inColor){
+  return inColor != BLACK;
 }

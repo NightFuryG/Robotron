@@ -29,7 +29,10 @@ class Map {
         corridors.addAll(node.corridors);
       }
     }
+  }
 
+  int randomRoomIndex() {
+    return (int) random(1, rooms.size());
   }
 
   //useful printmethod;

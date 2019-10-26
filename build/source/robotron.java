@@ -14,23 +14,28 @@ import java.io.IOException;
 
 public class robotron extends PApplet {
 
-final int BLACK = color(0);
+final int BLACK = color(0),
+            WHITE = color(255);
+
+final int HUMAN_RADIUS = displayWidth/50;
 
 Map map;
 Player player;
 boolean w, a, s, d;
 ArrayList<Bullet> bullets;
-
+ArrayList<Human> family;
 
 
 public void setup () {
   
   cursor(CROSS);
-  frameRate(200);
   map = new Map();
   player = spawnPlayer();
   w = a = s = d = false;
   bullets = new ArrayList();
+  family = new ArrayList();
+  spawnFamily();
+  System.out.println(family.size());
 }
 
 public void draw () {
@@ -41,6 +46,54 @@ public void draw () {
   player.draw();
   removeMissedBullets();
   drawBullets();
+  drawFamily();
+}
+
+public void spawnFamily(){
+
+  int randomRoomIndex;
+  int previousRoomIndex = 0;
+  int humanCount = 0;
+
+  while(humanCount < 3) {
+
+    randomRoomIndex = map.randomRoomIndex();
+
+    if (previousRoomIndex != randomRoomIndex) {
+      Room randomRoom = map.rooms.get(randomRoomIndex);
+
+      float x1 = randomRoom.position.x + 2 * HUMAN_RADIUS;
+      float x2 = randomRoom.position.x + randomRoom.width - 4 * HUMAN_RADIUS;
+
+      float y1 = randomRoom.position.y + 2 * HUMAN_RADIUS;
+      float y2 = randomRoom.position.y + randomRoom.height - 4 * HUMAN_RADIUS;
+
+      PVector randomPointInRoom = new PVector(random(x1, x2), random(y1, y2));
+
+      spawnFamilyMember(humanCount, randomPointInRoom);
+      humanCount++;
+      System.out.println("Success");
+    }
+
+    previousRoomIndex = randomRoomIndex;
+
+  }
+}
+
+public void spawnFamilyMember(int i, PVector randomPointInRoom){
+    switch(i) {
+      case 0:
+        family.add(new Human(randomPointInRoom.x, randomPointInRoom.y, 'F'));
+        break;
+      case 1:
+        family.add(new Human(randomPointInRoom.x, randomPointInRoom.y, 'M'));
+        break;
+      case 2:
+        family.add(new Human(randomPointInRoom.x, randomPointInRoom.y, 'C'));
+        break;
+      default:
+        break;
+    }
 }
 
 public Player spawnPlayer() {
@@ -169,9 +222,19 @@ public boolean checkNotBlack(int inColor){
   return inColor != BLACK;
 }
 
+public boolean checkWhite(int inColor) {
+  return inColor == WHITE;
+}
+
 public void drawBullets() {
   for(Bullet bullet : bullets) {
     bullet.draw();
+  }
+}
+
+public void drawFamily() {
+  for(Human human : family) {
+    human.draw();
   }
 }
 
@@ -452,6 +515,39 @@ class Bullet {
     display();
   }
 }
+class Human {
+
+  final int HUMAN_SIZE = displayWidth/50;
+
+  PVector position;
+  int humanSize;
+  char member;
+
+  Human(float x, float y, char member){
+    this.position = new PVector(x, y);
+    this.humanSize = HUMAN_SIZE;
+    this.member = member;
+  }
+
+
+  public void update(){
+
+  }
+
+  public void display(){
+    fill(255,0,0);
+    circle(position.x, position.y, humanSize);
+    fill(255);
+    textAlign(CENTER);
+    text(member, position.x, position.y);
+  }
+
+  public void draw() {
+    update();
+    display();
+  }
+
+}
 class Line {
   PVector start;
   PVector end;
@@ -492,7 +588,10 @@ class Map {
         corridors.addAll(node.corridors);
       }
     }
+  }
 
+  public int randomRoomIndex() {
+    return (int) random(1, rooms.size());
   }
 
   //useful printmethod;

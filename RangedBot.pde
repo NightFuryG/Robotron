@@ -3,4 +3,13 @@ class RangedBot extends Robot {
   RangedBot(float x, float  y) {
     super(x, y);
   }
+
+  void display() {
+    fill( 0, 255, 0);
+    square(this.position.x, this.position.y, this.size);
+  }
+
+  void draw(){
+    display();
+  }
 }

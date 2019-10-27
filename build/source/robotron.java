@@ -24,6 +24,7 @@ Player player;
 boolean w, a, s, d;
 ArrayList<Bullet> bullets;
 ArrayList<Human> family;
+ArrayList<Obstacle> obstacles;
 int score;
 
 
@@ -38,8 +39,9 @@ public void setup () {
   score = 0;
   bullets = new ArrayList();
   family = new ArrayList();
+  obstacles = new ArrayList();
   spawnFamily();
-
+  spawnObstacles();
 }
 
 public void draw () {
@@ -51,7 +53,10 @@ public void draw () {
   removeMissedBullets();
   drawBullets();
   drawFamily();
+  drawObstacles();
   detectPlayerFamilyCollision();
+  detectPlayerObstacleCollision();
+  detectBulletObstacleCollision();
   if(score > 0) {
     System.out.println(score);
   }
@@ -215,25 +220,15 @@ public void spawnFamily(){
   int randomRoomIndex;
   ArrayList<Integer> selectedRooms = new ArrayList();
   int humanCount = 0;
-  int boundarySpace = displayWidth/HUMAN_RADIUS_PROPORTION;
 
   while(humanCount < 3) {
 
     randomRoomIndex = map.randomRoomIndex();
 
     if (!selectedRooms.contains(randomRoomIndex)) {
-      Room randomRoom = map.rooms.get(randomRoomIndex);
 
-      float x1 = (randomRoom.position.x +(2 * boundarySpace));
-      float x2 = (randomRoom.position.x + randomRoom.width - (4 * boundarySpace));
 
-      float y1 = (randomRoom.position.y + (2 * boundarySpace));
-      float y2 = (randomRoom.position.y + randomRoom.height - (4 * boundarySpace));
-
-      float randomX = random(x1, x2);
-      float randomY = random(y1, y2);
-
-      PVector randomPointInRoom = new PVector(randomX, randomY);
+      PVector randomPointInRoom = randomPointInRoom(randomRoomIndex);
       spawnFamilyMember(humanCount, randomPointInRoom);
       humanCount++;
       selectedRooms.add(randomRoomIndex);
@@ -276,6 +271,86 @@ public void detectPlayerFamilyCollision(){
       family.remove(human);
       System.out.println("collision");
     }
+  }
+}
+
+public void detectPlayerObstacleCollision() {
+  float playerX = player.position.x;
+  float playerY = player.position.y;
+  int playerRadius = player.playerSize;
+
+  if(obstacles.size() > 0) {
+    for(Obstacle obstacle : new ArrayList<Obstacle>(obstacles)) {
+      float obstacleX = obstacle.position.x;
+      float obstacleY = obstacle.position.y;
+      int obstacleSize = obstacle.size;
+
+      if(playerX > obstacleX - obstacleSize && playerX < obstacleX + obstacleSize) {
+        if(playerY > obstacleY - obstacleSize && playerY < obstacleY + obstacleSize) {
+          obstacles.remove(obstacle);
+          player.lives--;
+          System.out.println(player.lives);
+        }
+      }
+    }
+  }
+}
+
+public void detectBulletObstacleCollision(){
+  for(Bullet bullet : new ArrayList<Bullet>(bullets)){
+    float bulletX = bullet.position.x;
+    float bulletY = bullet.position.y;
+
+    if(obstacles.size() > 0) {
+      for(Obstacle obstacle : new ArrayList<Obstacle>(obstacles)) {
+        float obstacleX = obstacle.position.x;
+        float obstacleY = obstacle.position.y;
+        int obstacleSize = obstacle.size;
+
+        if(bulletX > obstacleX - obstacleSize && bulletX < obstacleX + obstacleSize) {
+          if(bulletY > obstacleY - obstacleSize && bulletY < obstacleY + obstacleSize) {
+            obstacles.remove(obstacle);
+            bullets.remove(bullet);
+          }
+        }
+      }
+    }
+  }
+}
+
+public void spawnObstacles(){
+  int randomRoomIndex;
+  int obstacleCount = 0;
+
+  while(obstacleCount < 10) {
+
+      randomRoomIndex = map.randomRoomIndex();
+      PVector randomPointInRoom = randomPointInRoom(randomRoomIndex);
+      obstacles.add(new Obstacle(randomPointInRoom.x, randomPointInRoom.y));
+      obstacleCount++;
+
+    }
+}
+
+public PVector randomPointInRoom(int randomRoomIndex) {
+  int boundarySpace = displayWidth/HUMAN_RADIUS_PROPORTION;
+  Room randomRoom = map.rooms.get(randomRoomIndex);
+
+  float x1 = (randomRoom.position.x +(2 * boundarySpace));
+  float x2 = (randomRoom.position.x + randomRoom.width - (4 * boundarySpace));
+
+  float y1 = (randomRoom.position.y + (2 * boundarySpace));
+  float y2 = (randomRoom.position.y + randomRoom.height - (4 * boundarySpace));
+
+  float randomX = random(x1, x2);
+  float randomY = random(y1, y2);
+
+  return new PVector(randomX, randomY);
+}
+
+public void drawObstacles() {
+  for(Obstacle obstacle : obstacles) {
+    obstacle.draw();
   }
 }
 class BSPNode {
@@ -634,6 +709,45 @@ class Map {
     System.out.println();
   }
 }
+class Obstacle {
+
+  final int OBSTACLE_SIZE = 50;
+  final float ROTATION_SPEED = 0.1f;
+
+  PVector position;
+  int size;
+  float theta;
+  float spin;
+
+  Obstacle(float x, float y){
+    this.position = new PVector(x,y);
+    this.size = displayWidth/OBSTACLE_SIZE;
+    this.spin = ROTATION_SPEED;
+    this.theta = 0;
+  }
+
+  public void update(){
+    this.theta += this.spin;
+  }
+
+  public void display(){
+    pushStyle();
+    rectMode(CENTER);
+    fill( 0,0,255);
+
+    pushMatrix();
+    translate(position.x, position.y);
+    rotate(theta);
+    rect(0,0,size, size);
+    popMatrix();
+    popStyle();
+  }
+
+  public void draw(){
+    update();
+    display();
+  }
+}
 class Partition {
   PVector position;
   int height;
@@ -660,25 +774,24 @@ class Partition {
 }
 class Player {
 
-  final int PLAYER_SPEED = displayWidth/750;
-  final int PLAYER_RADIUS = displayWidth/50;
+  final int PLAYER_SPEED = displayWidth/750,
+            PLAYER_RADIUS = displayWidth/50,
+            PLAYER_LIVES = 3;
 
-  final PVector NORTH = new PVector(0,-PLAYER_SPEED),
-                SOUTH = new PVector(0, PLAYER_SPEED),
-                EAST =  new PVector(PLAYER_SPEED, 0),
-                WEST = new PVector(-PLAYER_SPEED, 0);
 
 
   PVector position;
   PVector velocity;
   int playerSize;
   int playerSpeed;
+  int lives;
 
   Player(int x, int y) {
     this.position = new PVector(x, y);
     this.velocity = new PVector(0,0);
     this.playerSize = PLAYER_RADIUS;
     this.playerSpeed = PLAYER_SPEED;
+    this.lives = PLAYER_LIVES;
   }
 
   public void move(int i) {
@@ -718,10 +831,8 @@ class Player {
     update();
     display();
   }
-
-
-
 }
+
 class Room {
   PVector position;
   int height;

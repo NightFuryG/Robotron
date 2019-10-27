@@ -1,24 +1,23 @@
 class Player {
 
-  final int PLAYER_SPEED = displayWidth/750;
-  final int PLAYER_RADIUS = displayWidth/50;
+  final int PLAYER_SPEED = displayWidth/750,
+            PLAYER_RADIUS = displayWidth/50,
+            PLAYER_LIVES = 3;
 
-  final PVector NORTH = new PVector(0,-PLAYER_SPEED),
-                SOUTH = new PVector(0, PLAYER_SPEED),
-                EAST =  new PVector(PLAYER_SPEED, 0),
-                WEST = new PVector(-PLAYER_SPEED, 0);
 
 
   PVector position;
   PVector velocity;
   int playerSize;
   int playerSpeed;
+  int lives;
 
   Player(int x, int y) {
     this.position = new PVector(x, y);
     this.velocity = new PVector(0,0);
     this.playerSize = PLAYER_RADIUS;
     this.playerSpeed = PLAYER_SPEED;
+    this.lives = PLAYER_LIVES;
   }
 
   void move(int i) {
@@ -58,7 +57,4 @@ class Player {
     update();
     display();
   }
-
-
-
 }

@@ -8,6 +8,7 @@ Player player;
 boolean w, a, s, d;
 ArrayList<Bullet> bullets;
 ArrayList<Human> family;
+ArrayList<Obstacle> obstacles;
 int score;
 
 
@@ -22,8 +23,9 @@ void setup () {
   score = 0;
   bullets = new ArrayList();
   family = new ArrayList();
+  obstacles = new ArrayList();
   spawnFamily();
-
+  spawnObstacles();
 }
 
 void draw () {
@@ -35,7 +37,10 @@ void draw () {
   removeMissedBullets();
   drawBullets();
   drawFamily();
+  drawObstacles();
   detectPlayerFamilyCollision();
+  detectPlayerObstacleCollision();
+  detectBulletObstacleCollision();
   if(score > 0) {
     System.out.println(score);
   }
@@ -199,25 +204,15 @@ void spawnFamily(){
   int randomRoomIndex;
   ArrayList<Integer> selectedRooms = new ArrayList();
   int humanCount = 0;
-  int boundarySpace = displayWidth/HUMAN_RADIUS_PROPORTION;
 
   while(humanCount < 3) {
 
     randomRoomIndex = map.randomRoomIndex();
 
     if (!selectedRooms.contains(randomRoomIndex)) {
-      Room randomRoom = map.rooms.get(randomRoomIndex);
 
-      float x1 = (randomRoom.position.x +(2 * boundarySpace));
-      float x2 = (randomRoom.position.x + randomRoom.width - (4 * boundarySpace));
 
-      float y1 = (randomRoom.position.y + (2 * boundarySpace));
-      float y2 = (randomRoom.position.y + randomRoom.height - (4 * boundarySpace));
-
-      float randomX = random(x1, x2);
-      float randomY = random(y1, y2);
-
-      PVector randomPointInRoom = new PVector(randomX, randomY);
+      PVector randomPointInRoom = randomPointInRoom(randomRoomIndex);
       spawnFamilyMember(humanCount, randomPointInRoom);
       humanCount++;
       selectedRooms.add(randomRoomIndex);
@@ -260,5 +255,85 @@ void detectPlayerFamilyCollision(){
       family.remove(human);
       System.out.println("collision");
     }
+  }
+}
+
+void detectPlayerObstacleCollision() {
+  float playerX = player.position.x;
+  float playerY = player.position.y;
+  int playerRadius = player.playerSize;
+
+  if(obstacles.size() > 0) {
+    for(Obstacle obstacle : new ArrayList<Obstacle>(obstacles)) {
+      float obstacleX = obstacle.position.x;
+      float obstacleY = obstacle.position.y;
+      int obstacleSize = obstacle.size;
+
+      if(playerX > obstacleX - obstacleSize && playerX < obstacleX + obstacleSize) {
+        if(playerY > obstacleY - obstacleSize && playerY < obstacleY + obstacleSize) {
+          obstacles.remove(obstacle);
+          player.lives--;
+          System.out.println(player.lives);
+        }
+      }
+    }
+  }
+}
+
+void detectBulletObstacleCollision(){
+  for(Bullet bullet : new ArrayList<Bullet>(bullets)){
+    float bulletX = bullet.position.x;
+    float bulletY = bullet.position.y;
+
+    if(obstacles.size() > 0) {
+      for(Obstacle obstacle : new ArrayList<Obstacle>(obstacles)) {
+        float obstacleX = obstacle.position.x;
+        float obstacleY = obstacle.position.y;
+        int obstacleSize = obstacle.size;
+
+        if(bulletX > obstacleX - obstacleSize && bulletX < obstacleX + obstacleSize) {
+          if(bulletY > obstacleY - obstacleSize && bulletY < obstacleY + obstacleSize) {
+            obstacles.remove(obstacle);
+            bullets.remove(bullet);
+          }
+        }
+      }
+    }
+  }
+}
+
+void spawnObstacles(){
+  int randomRoomIndex;
+  int obstacleCount = 0;
+
+  while(obstacleCount < 10) {
+
+      randomRoomIndex = map.randomRoomIndex();
+      PVector randomPointInRoom = randomPointInRoom(randomRoomIndex);
+      obstacles.add(new Obstacle(randomPointInRoom.x, randomPointInRoom.y));
+      obstacleCount++;
+
+    }
+}
+
+PVector randomPointInRoom(int randomRoomIndex) {
+  int boundarySpace = displayWidth/HUMAN_RADIUS_PROPORTION;
+  Room randomRoom = map.rooms.get(randomRoomIndex);
+
+  float x1 = (randomRoom.position.x +(2 * boundarySpace));
+  float x2 = (randomRoom.position.x + randomRoom.width - (4 * boundarySpace));
+
+  float y1 = (randomRoom.position.y + (2 * boundarySpace));
+  float y2 = (randomRoom.position.y + randomRoom.height - (4 * boundarySpace));
+
+  float randomX = random(x1, x2);
+  float randomY = random(y1, y2);
+
+  return new PVector(randomX, randomY);
+}
+
+void drawObstacles() {
+  for(Obstacle obstacle : obstacles) {
+    obstacle.draw();
   }
 }

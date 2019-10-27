@@ -61,11 +61,7 @@ public void draw () {
   drawRobots();
   detectPlayerFamilyCollision();
   detectPlayerObstacleCollision();
-  detectBulletObstacleCollision();
-  if(score > 0) {
-    System.out.println(score);
-  }
-
+  detectBulletCollision();
 }
 
 
@@ -301,39 +297,91 @@ public void detectPlayerObstacleCollision() {
   int playerRadius = player.playerSize;
 
   if(obstacles.size() > 0) {
-    for(Obstacle obstacle : new ArrayList<Obstacle>(obstacles)) {
-      float obstacleX = obstacle.position.x;
-      float obstacleY = obstacle.position.y;
-      int obstacleSize = obstacle.size;
+    playerObstacleCollision(playerX, playerY, playerRadius);
+  }
+  if(robots.size() > 0) {
+    playerRobotCollision(playerX, playerY, playerRadius);
+  }
+}
 
-      if(playerX > obstacleX - obstacleSize && playerX < obstacleX + obstacleSize) {
-        if(playerY > obstacleY - obstacleSize && playerY < obstacleY + obstacleSize) {
-          obstacles.remove(obstacle);
-          player.lives--;
-          System.out.println(player.lives);
-        }
+public void playerObstacleCollision(float playerX, float playerY, int playerSize){
+  for(Obstacle obstacle : new ArrayList<Obstacle>(obstacles)) {
+    float obstacleX = obstacle.position.x;
+    float obstacleY = obstacle.position.y;
+    int obstacleSize = obstacle.size;
+
+    if(playerX > obstacleX - obstacleSize && playerX < obstacleX + obstacleSize) {
+      if(playerY > obstacleY - obstacleSize && playerY < obstacleY + obstacleSize) {
+        obstacles.remove(obstacle);
+        player.lives--;
+        System.out.println(player.lives);
       }
     }
   }
 }
 
-public void detectBulletObstacleCollision(){
+public void playerRobotCollision(float playerX, float playerY, int playerSize){
+  for(Robot robot : new ArrayList<Robot>(robots)) {
+    float robotX = robot.position.x;
+    float robotY = robot.position.y;
+    int robotSize = robot.size;
+
+    if(playerX - playerSize/2 < robotX + robotSize && playerX + playerSize/2 > robotX) {
+      if(playerY - playerSize/2 < robotY + robotSize && playerY + playerSize/2 > robotY) {
+        robots.remove(robot);
+        player.lives--;
+        System.out.println(player.lives);
+      }
+    }
+  }
+}
+
+public void detectBulletCollision(){
   for(Bullet bullet : new ArrayList<Bullet>(bullets)){
-    float bulletX = bullet.position.x;
-    float bulletY = bullet.position.y;
+
 
     if(obstacles.size() > 0) {
-      for(Obstacle obstacle : new ArrayList<Obstacle>(obstacles)) {
-        float obstacleX = obstacle.position.x;
-        float obstacleY = obstacle.position.y;
-        int obstacleSize = obstacle.size;
+      bulletObstacleCollision(bullet);
+    }
 
-        if(bulletX > obstacleX - obstacleSize && bulletX < obstacleX + obstacleSize) {
-          if(bulletY > obstacleY - obstacleSize && bulletY < obstacleY + obstacleSize) {
-            obstacles.remove(obstacle);
-            bullets.remove(bullet);
-          }
-        }
+    if(robots.size() > 0) {
+      bulletRobotCollision(bullet);
+    }
+  }
+}
+
+public void bulletObstacleCollision(Bullet bullet) {
+  float bulletX = bullet.position.x;
+  float bulletY = bullet.position.y;
+
+  for(Obstacle obstacle : new ArrayList<Obstacle>(obstacles)) {
+    float obstacleX = obstacle.position.x;
+    float obstacleY = obstacle.position.y;
+    int obstacleSize = obstacle.size;
+
+    if(bulletX > obstacleX - obstacleSize && bulletX < obstacleX + obstacleSize) {
+      if(bulletY > obstacleY - obstacleSize && bulletY < obstacleY + obstacleSize) {
+        obstacles.remove(obstacle);
+        bullets.remove(bullet);
+      }
+    }
+  }
+
+}
+
+public void bulletRobotCollision(Bullet bullet) {
+  float bulletX = bullet.position.x;
+  float bulletY = bullet.position.y;
+
+  for(Robot robot : new ArrayList<Robot>(robots)) {
+    float robotX = robot.position.x;
+    float robotY = robot.position.y;
+    int robotSize = robot.size;
+
+    if(bulletX > robotX - robotSize && bulletX < robotX + robotSize) {
+      if(bulletY > robotY - robotSize && bulletY < robotY + robotSize) {
+        robots.remove(robot);
+        bullets.remove(bullet);
       }
     }
   }

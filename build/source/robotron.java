@@ -27,6 +27,8 @@ ArrayList<Human> family;
 ArrayList<Obstacle> obstacles;
 int score;
 
+Robot bot;
+
 
 
 public void setup () {
@@ -42,6 +44,7 @@ public void setup () {
   obstacles = new ArrayList();
   spawnFamily();
   spawnObstacles();
+  bot = new MeleeBot(displayWidth/2, displayHeight/2);
 }
 
 public void draw () {
@@ -60,6 +63,8 @@ public void draw () {
   if(score > 0) {
     System.out.println(score);
   }
+
+  bot.draw();
 }
 
 
@@ -709,6 +714,26 @@ class Map {
     System.out.println();
   }
 }
+class MeleeBot extends Robot {
+
+  MeleeBot(float x, float y) {
+    super(x , y);
+  }
+
+  public void update() {
+
+  }
+
+  public void display() {
+    fill(255, 255, 0);
+    square(this.position.x, this.position.y, this.size);
+  }
+
+  public void draw(){
+    display();
+  }
+
+}
 class Obstacle {
 
   final int OBSTACLE_SIZE = 50;
@@ -832,7 +857,28 @@ class Player {
     display();
   }
 }
+class RangedBot extends Robot {
 
+  RangedBot(float x, float  y) {
+    super(x, y);
+  }
+}
+class Robot {
+  final int ROBOT_SIZE = 50;
+
+  PVector position;
+  PVector velocity;
+  int size;
+
+  Robot(float x, float y) {
+    this.position = new PVector(x, y);
+    this.velocity = new PVector(0,0);
+    this.size = displayWidth/ROBOT_SIZE;
+  }
+
+  
+
+}
 class Room {
   PVector position;
   int height;
@@ -855,6 +901,12 @@ class Room {
     System.out.println("Right Edge: " + (position.x + width));
     System.out.println("Top Edge: " + position.y);
     System.out.println("Botoom Edge: " + (position.y + height));
+  }
+}
+class SeekBot extends Robot {
+
+  SeekBot (float x, float  y) {
+    super(x, y);
   }
 }
   public void settings() {  fullScreen();  smooth(); }

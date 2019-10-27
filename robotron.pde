@@ -11,6 +11,8 @@ ArrayList<Human> family;
 ArrayList<Obstacle> obstacles;
 int score;
 
+Robot bot;
+
 
 
 void setup () {
@@ -26,6 +28,7 @@ void setup () {
   obstacles = new ArrayList();
   spawnFamily();
   spawnObstacles();
+  bot = new MeleeBot(displayWidth/2, displayHeight/2);
 }
 
 void draw () {
@@ -44,6 +47,8 @@ void draw () {
   if(score > 0) {
     System.out.println(score);
   }
+
+  bot.draw();
 }
 
 

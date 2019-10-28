@@ -10,7 +10,11 @@ ArrayList<Bullet> bullets;
 ArrayList<Human> family;
 ArrayList<Obstacle> obstacles;
 ArrayList<Robot> robots;
+ArrayList<PVector> spawns;
 int score;
+int size;
+int wave;
+boolean alive;
 
 
 
@@ -23,29 +27,59 @@ void setup () {
   player = spawnPlayer();
   w = a = s = d = false;
   score = 0;
+  wave = 0;
+  size = displayWidth/HUMAN_RADIUS_PROPORTION;
+  alive = true;
   bullets = new ArrayList();
   family = new ArrayList();
   obstacles = new ArrayList();
   robots = new ArrayList();
+  spawns = new ArrayList();
   spawnFamilyAndSeekBots();
   spawnObstacles();
   spawnRobots();
+  checkRooms();
 }
 
 void draw () {
-  background(0);
-  map.draw();
-  ensurePlayerInArea();
-  playerMove();
-  player.draw();
-  removeMissedBullets();
-  drawBullets();
-  drawFamily();
-  drawObstacles();
-  drawRobots();
-  detectPlayerFamilyCollision();
-  detectPlayerObstacleCollision();
-  detectBulletCollision();
+    background(0);
+    if(alive) {
+      map.draw();
+      ensurePlayerInArea();
+      playerMove();
+      player.draw();
+      removeMissedBullets();
+      drawBullets();
+      drawFamily();
+      drawObstacles();
+      drawRobots();
+      detectPlayerFamilyCollision();
+      detectPlayerObstacleCollision();
+      detectBulletCollision();
+      alive = checkNotDead();
+    }
+}
+
+void reset(){
+  map = new Map();
+  player.lives = 3;
+  score = 0;
+  wave = 0;
+  bullets.clear();
+  family.clear();
+  obstacles.clear();
+  robots.clear();
+  spawns.clear();
+  player = spawnPlayer();
+  spawnFamilyAndSeekBots();
+  spawnObstacles();
+  spawnRobots();
+  alive = true;
+
+}
+
+boolean checkNotDead(){
+  return (player.lives > 0 ? true : false);
 }
 
 
@@ -82,28 +116,32 @@ void keyReleased() {
 }
 
 void mousePressed(){
-  bullets.add(new Bullet(player.position.x, player.position.y, mouseX, mouseY));
-  System.out.println(bullets.size());
+  if(alive) {
+    bullets.add(new Bullet(player.position.x, player.position.y, mouseX, mouseY));
+  } else {
+    reset();
+  }
+
 }
 
 void playerMove() {
   if(w) {
-    if(checkNotBlack(getUpColor())){
+    if(checkNotBlack(getUpColor()) && !checkTopEdge()){
       player.move(1);
     }
   }
   if(s) {
-    if(checkNotBlack(getDownColor())){
+    if(checkNotBlack(getDownColor()) && !checkBottomEdge()){
     player.move(2);
     }
   }
   if(d) {
-    if(checkNotBlack(getRightColor())) {
+    if(checkNotBlack(getRightColor()) && !checkRightEdge()) {
       player.move(3);
     }
   }
   if(a) {
-    if(checkNotBlack(getLeftColor())) {
+    if(checkNotBlack(getLeftColor()) && !checkLeftEdge()) {
       player.move(4);
     }
   }
@@ -113,7 +151,7 @@ void ensurePlayerInArea(){
 
   int cornerBounce = player.playerSize*10;
 
-  if(!checkNotBlack(getLeftColor())) {
+  if(!checkNotBlack(getLeftColor()) || checkLeftEdge()) {
     if (player.velocity.x < 0) {
       player.velocity.x = -player.velocity.x;
     }
@@ -121,27 +159,50 @@ void ensurePlayerInArea(){
       player.velocity.x = cornerBounce;
     }
   }
-  if(!checkNotBlack(getRightColor())){
+  if(!checkNotBlack(getRightColor()) || checkRightEdge()){
     if (player.velocity.x > 0) {
       player.velocity.x = -player.velocity.x;
     } else if (player.velocity.x <= 0) {
         player.velocity.x = -cornerBounce;
     }
   }
-  if(!checkNotBlack(getUpColor())){
+  if(!checkNotBlack(getUpColor()) || checkTopEdge()){
     if (player.velocity.y < 0) {
       player.velocity.y = -player.velocity.y;
     } else if (player.velocity.y >= 0) {
         player.velocity.y = cornerBounce;
     }
   }
-  if(!checkNotBlack(getDownColor())){
+  if(!checkNotBlack(getDownColor()) || checkBottomEdge()){
     if (player.velocity.y > 0) {
       player.velocity.y = -player.velocity.y;
     } else if (player.velocity.y <= 0) {
       player.velocity.y = -cornerBounce;
     }
   }
+}
+
+
+
+boolean checkBottomEdge() {
+  int downY= (int) player.position.y + player.playerSize/2;
+  return downY >= displayHeight;
+}
+
+boolean checkLeftEdge(){
+  int leftX = (int) player.position.x - player.playerSize/2;
+  return leftX <= 0;
+}
+
+boolean checkRightEdge(){
+  int rightX = (int) player.position.x + player.playerSize/2;
+  return rightX >= displayWidth;
+}
+
+boolean checkTopEdge(){
+  int topY = (int) player.position.y - player.playerSize/2;
+  return topY <= 0;
+
 }
 
 color getLeftColor() {
@@ -176,9 +237,6 @@ boolean checkNotBlack(color inColor){
   return inColor != BLACK;
 }
 
-boolean checkWhite(color inColor) {
-  return inColor == WHITE;
-}
 
 void drawBullets() {
   for(Bullet bullet : bullets) {
@@ -216,14 +274,72 @@ void spawnFamilyAndSeekBots(){
 
       PVector randomPointInRoom = randomPointInRoom(randomRoomIndex);
       PVector seekBotSpawnPoint = inverseRandomPointInRoom(randomRoomIndex, randomPointInRoom);
-      spawnFamilyMember(humanCount, randomPointInRoom);
-      robots.add(new SeekBot(seekBotSpawnPoint.x, seekBotSpawnPoint.y));
-      humanCount++;
-      selectedRooms.add(randomRoomIndex);
+
+      if(checkSpawnLocation(randomPointInRoom) && checkSpawnLocation(seekBotSpawnPoint)) {
+        spawnFamilyMember(humanCount, randomPointInRoom);
+
+        if(checkCentralRoomSpawn(randomPointInRoom, randomRoomIndex)) {
+          robots.add(spawnSeekBot(seekBotSpawnPoint));
+        } else {
+          robots.add(spawnDefaultSeekBot(randomRoomIndex));
+        }
+        humanCount++;
+        selectedRooms.add(randomRoomIndex);
+        spawns.add(randomPointInRoom);
+        spawns.add(seekBotSpawnPoint);
+      }
 
     }
 
   }
+}
+
+SeekBot spawnSeekBot(PVector seekBotSpawnPoint) {
+  return new SeekBot(seekBotSpawnPoint.x - size/2, seekBotSpawnPoint.y - size/2);
+}
+
+SeekBot spawnDefaultSeekBot(int randomRoomIndex){
+  int spawnRadius = size;
+  Room room = map.rooms.get(randomRoomIndex);
+  float roomX = room.position.x + spawnRadius;
+  float roomY = room.position.y + spawnRadius;
+  PVector spawnLocation = new PVector(roomX, roomY);
+
+  return spawnSeekBot(spawnLocation);
+
+}
+
+boolean checkCentralRoomSpawn(PVector spawnLocation, int randomRoomIndex) {
+  float spawnRadius = displayWidth/HUMAN_RADIUS_PROPORTION;
+  Room room = map.rooms.get(randomRoomIndex);
+  PVector spawn = new PVector(room.position.x + room.width/2, room.position.y + room.height/2);
+
+  if(spawnLocation.x > spawn.x - spawnRadius && spawnLocation.x < spawn.x + spawnRadius) {
+    if(spawnLocation.y > spawn.y - spawnRadius && spawnLocation.y < spawn.y + spawnRadius) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
+
+
+boolean checkSpawnLocation(PVector spawnLocation) {
+  float spawnRadius = displayWidth/(HUMAN_RADIUS_PROPORTION/2);
+
+  if(spawns.size() == 0) {
+    return true;
+  }
+
+  for(PVector spawn : spawns) {
+    if(spawnLocation.x > spawn.x - spawnRadius && spawnLocation.x < spawn.x + spawnRadius) {
+      if(spawnLocation.y > spawn.y - spawnRadius && spawnLocation.y < spawn.y + spawnRadius) {
+        return false;
+      }
+    }
+  }
+  return true;
 }
 
 
@@ -270,7 +386,6 @@ void detectPlayerFamilyCollision(){
         score += 1000;
       }
       family.remove(human);
-      System.out.println("collision");
     }
   }
 }
@@ -298,7 +413,6 @@ void playerObstacleCollision(float playerX, float playerY, int playerSize){
       if(playerY > obstacleY - obstacleSize && playerY < obstacleY + obstacleSize) {
         obstacles.remove(obstacle);
         player.lives--;
-        System.out.println(player.lives);
       }
     }
   }
@@ -314,7 +428,6 @@ void playerRobotCollision(float playerX, float playerY, int playerSize){
       if(playerY - playerSize/2 < robotY + robotSize && playerY + playerSize/2 > robotY) {
         robots.remove(robot);
         player.lives--;
-        System.out.println(player.lives);
       }
     }
   }
@@ -379,9 +492,11 @@ void spawnObstacles(){
 
       randomRoomIndex = map.randomRoomIndex();
       PVector randomPointInRoom = randomPointInRoom(randomRoomIndex);
-      obstacles.add(new Obstacle(randomPointInRoom.x, randomPointInRoom.y));
-      obstacleCount++;
-
+      if(checkSpawnLocation(randomPointInRoom)) {
+        spawns.add(randomPointInRoom);
+        obstacles.add(new Obstacle(randomPointInRoom.x, randomPointInRoom.y));
+        obstacleCount++;
+       }
     }
 }
 
@@ -393,14 +508,20 @@ void spawnRobots() {
 
       randomRoomIndex = map.randomRoomIndex();
       PVector randomPointInRoom = randomPointInRoom(randomRoomIndex);
-      if(robotCount % 2 == 0) {
-        robots.add(new MeleeBot(randomPointInRoom.x, randomPointInRoom.y));
-      } else {
-        robots.add(new RangedBot(randomPointInRoom.x, randomPointInRoom.y));
-      }
+      if(checkSpawnLocation(randomPointInRoom)) {
+        if(robotCount % 2 == 0) {
+          robots.add(new MeleeBot(randomPointInRoom.x, randomPointInRoom.y));
+          spawns.add(randomPointInRoom);
+          robotCount++;
+        } else {
+          robots.add(new RangedBot(randomPointInRoom.x, randomPointInRoom.y));
+          spawns.add(randomPointInRoom);
+          robotCount++;
+        }
 
-      robotCount++;
+
     }
+  }
 }
 
 void drawRobots(){
@@ -415,11 +536,11 @@ PVector randomPointInRoom(int randomRoomIndex) {
   int boundarySpace = displayWidth/HUMAN_RADIUS_PROPORTION;
   Room randomRoom = map.rooms.get(randomRoomIndex);
 
-  float x1 = (randomRoom.position.x +(2 * boundarySpace));
-  float x2 = (randomRoom.position.x + randomRoom.width - (4 * boundarySpace));
+  float x1 = (randomRoom.position.x +(boundarySpace));
+  float x2 = (randomRoom.position.x + randomRoom.width - (2 * boundarySpace));
 
-  float y1 = (randomRoom.position.y + (2 * boundarySpace));
-  float y2 = (randomRoom.position.y + randomRoom.height - (4 * boundarySpace));
+  float y1 = (randomRoom.position.y + (boundarySpace));
+  float y2 = (randomRoom.position.y + randomRoom.height - (2 * boundarySpace));
 
   float randomX = random(x1, x2);
   float randomY = random(y1, y2);
@@ -430,5 +551,22 @@ PVector randomPointInRoom(int randomRoomIndex) {
 void drawObstacles() {
   for(Obstacle obstacle : obstacles) {
     obstacle.draw();
+  }
+}
+
+void printSpawns() {
+  for(PVector spawn : spawns) {
+    System.out.println(spawn);
+  }
+}
+
+void checkRooms() {
+  for(Room room : map.rooms) {
+    if(room.position.x + room.width > displayWidth) {
+      System.out.println("bad x");
+    }
+    if(room.position.y + room.height > displayHeight) {
+      System.out.println("bad y");
+    }
   }
 }

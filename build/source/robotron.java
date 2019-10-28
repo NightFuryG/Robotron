@@ -26,7 +26,11 @@ ArrayList<Bullet> bullets;
 ArrayList<Human> family;
 ArrayList<Obstacle> obstacles;
 ArrayList<Robot> robots;
+ArrayList<PVector> spawns;
 int score;
+int size;
+int wave;
+boolean alive;
 
 
 
@@ -39,29 +43,59 @@ public void setup () {
   player = spawnPlayer();
   w = a = s = d = false;
   score = 0;
+  wave = 0;
+  size = displayWidth/HUMAN_RADIUS_PROPORTION;
+  alive = true;
   bullets = new ArrayList();
   family = new ArrayList();
   obstacles = new ArrayList();
   robots = new ArrayList();
+  spawns = new ArrayList();
   spawnFamilyAndSeekBots();
   spawnObstacles();
   spawnRobots();
+  checkRooms();
 }
 
 public void draw () {
-  background(0);
-  map.draw();
-  ensurePlayerInArea();
-  playerMove();
-  player.draw();
-  removeMissedBullets();
-  drawBullets();
-  drawFamily();
-  drawObstacles();
-  drawRobots();
-  detectPlayerFamilyCollision();
-  detectPlayerObstacleCollision();
-  detectBulletCollision();
+    background(0);
+    if(alive) {
+      map.draw();
+      ensurePlayerInArea();
+      playerMove();
+      player.draw();
+      removeMissedBullets();
+      drawBullets();
+      drawFamily();
+      drawObstacles();
+      drawRobots();
+      detectPlayerFamilyCollision();
+      detectPlayerObstacleCollision();
+      detectBulletCollision();
+      alive = checkNotDead();
+    }
+}
+
+public void reset(){
+  map = new Map();
+  player.lives = 3;
+  score = 0;
+  wave = 0;
+  bullets.clear();
+  family.clear();
+  obstacles.clear();
+  robots.clear();
+  spawns.clear();
+  player = spawnPlayer();
+  spawnFamilyAndSeekBots();
+  spawnObstacles();
+  spawnRobots();
+  alive = true;
+
+}
+
+public boolean checkNotDead(){
+  return (player.lives > 0 ? true : false);
 }
 
 
@@ -98,28 +132,32 @@ public void keyReleased() {
 }
 
 public void mousePressed(){
-  bullets.add(new Bullet(player.position.x, player.position.y, mouseX, mouseY));
-  System.out.println(bullets.size());
+  if(alive) {
+    bullets.add(new Bullet(player.position.x, player.position.y, mouseX, mouseY));
+  } else {
+    reset();
+  }
+
 }
 
 public void playerMove() {
   if(w) {
-    if(checkNotBlack(getUpColor())){
+    if(checkNotBlack(getUpColor()) && !checkTopEdge()){
       player.move(1);
     }
   }
   if(s) {
-    if(checkNotBlack(getDownColor())){
+    if(checkNotBlack(getDownColor()) && !checkBottomEdge()){
     player.move(2);
     }
   }
   if(d) {
-    if(checkNotBlack(getRightColor())) {
+    if(checkNotBlack(getRightColor()) && !checkRightEdge()) {
       player.move(3);
     }
   }
   if(a) {
-    if(checkNotBlack(getLeftColor())) {
+    if(checkNotBlack(getLeftColor()) && !checkLeftEdge()) {
       player.move(4);
     }
   }
@@ -129,7 +167,7 @@ public void ensurePlayerInArea(){
 
   int cornerBounce = player.playerSize*10;
 
-  if(!checkNotBlack(getLeftColor())) {
+  if(!checkNotBlack(getLeftColor()) || checkLeftEdge()) {
     if (player.velocity.x < 0) {
       player.velocity.x = -player.velocity.x;
     }
@@ -137,27 +175,50 @@ public void ensurePlayerInArea(){
       player.velocity.x = cornerBounce;
     }
   }
-  if(!checkNotBlack(getRightColor())){
+  if(!checkNotBlack(getRightColor()) || checkRightEdge()){
     if (player.velocity.x > 0) {
       player.velocity.x = -player.velocity.x;
     } else if (player.velocity.x <= 0) {
         player.velocity.x = -cornerBounce;
     }
   }
-  if(!checkNotBlack(getUpColor())){
+  if(!checkNotBlack(getUpColor()) || checkTopEdge()){
     if (player.velocity.y < 0) {
       player.velocity.y = -player.velocity.y;
     } else if (player.velocity.y >= 0) {
         player.velocity.y = cornerBounce;
     }
   }
-  if(!checkNotBlack(getDownColor())){
+  if(!checkNotBlack(getDownColor()) || checkBottomEdge()){
     if (player.velocity.y > 0) {
       player.velocity.y = -player.velocity.y;
     } else if (player.velocity.y <= 0) {
       player.velocity.y = -cornerBounce;
     }
   }
+}
+
+
+
+public boolean checkBottomEdge() {
+  int downY= (int) player.position.y + player.playerSize/2;
+  return downY >= displayHeight;
+}
+
+public boolean checkLeftEdge(){
+  int leftX = (int) player.position.x - player.playerSize/2;
+  return leftX <= 0;
+}
+
+public boolean checkRightEdge(){
+  int rightX = (int) player.position.x + player.playerSize/2;
+  return rightX >= displayWidth;
+}
+
+public boolean checkTopEdge(){
+  int topY = (int) player.position.y - player.playerSize/2;
+  return topY <= 0;
+
 }
 
 public int getLeftColor() {
@@ -192,9 +253,6 @@ public boolean checkNotBlack(int inColor){
   return inColor != BLACK;
 }
 
-public boolean checkWhite(int inColor) {
-  return inColor == WHITE;
-}
 
 public void drawBullets() {
   for(Bullet bullet : bullets) {
@@ -232,14 +290,72 @@ public void spawnFamilyAndSeekBots(){
 
       PVector randomPointInRoom = randomPointInRoom(randomRoomIndex);
       PVector seekBotSpawnPoint = inverseRandomPointInRoom(randomRoomIndex, randomPointInRoom);
-      spawnFamilyMember(humanCount, randomPointInRoom);
-      robots.add(new SeekBot(seekBotSpawnPoint.x, seekBotSpawnPoint.y));
-      humanCount++;
-      selectedRooms.add(randomRoomIndex);
+
+      if(checkSpawnLocation(randomPointInRoom) && checkSpawnLocation(seekBotSpawnPoint)) {
+        spawnFamilyMember(humanCount, randomPointInRoom);
+
+        if(checkCentralRoomSpawn(randomPointInRoom, randomRoomIndex)) {
+          robots.add(spawnSeekBot(seekBotSpawnPoint));
+        } else {
+          robots.add(spawnDefaultSeekBot(randomRoomIndex));
+        }
+        humanCount++;
+        selectedRooms.add(randomRoomIndex);
+        spawns.add(randomPointInRoom);
+        spawns.add(seekBotSpawnPoint);
+      }
 
     }
 
   }
+}
+
+public SeekBot spawnSeekBot(PVector seekBotSpawnPoint) {
+  return new SeekBot(seekBotSpawnPoint.x - size/2, seekBotSpawnPoint.y - size/2);
+}
+
+public SeekBot spawnDefaultSeekBot(int randomRoomIndex){
+  int spawnRadius = size;
+  Room room = map.rooms.get(randomRoomIndex);
+  float roomX = room.position.x + spawnRadius;
+  float roomY = room.position.y + spawnRadius;
+  PVector spawnLocation = new PVector(roomX, roomY);
+
+  return spawnSeekBot(spawnLocation);
+
+}
+
+public boolean checkCentralRoomSpawn(PVector spawnLocation, int randomRoomIndex) {
+  float spawnRadius = displayWidth/HUMAN_RADIUS_PROPORTION;
+  Room room = map.rooms.get(randomRoomIndex);
+  PVector spawn = new PVector(room.position.x + room.width/2, room.position.y + room.height/2);
+
+  if(spawnLocation.x > spawn.x - spawnRadius && spawnLocation.x < spawn.x + spawnRadius) {
+    if(spawnLocation.y > spawn.y - spawnRadius && spawnLocation.y < spawn.y + spawnRadius) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
+
+
+public boolean checkSpawnLocation(PVector spawnLocation) {
+  float spawnRadius = displayWidth/(HUMAN_RADIUS_PROPORTION/2);
+
+  if(spawns.size() == 0) {
+    return true;
+  }
+
+  for(PVector spawn : spawns) {
+    if(spawnLocation.x > spawn.x - spawnRadius && spawnLocation.x < spawn.x + spawnRadius) {
+      if(spawnLocation.y > spawn.y - spawnRadius && spawnLocation.y < spawn.y + spawnRadius) {
+        return false;
+      }
+    }
+  }
+  return true;
 }
 
 
@@ -286,7 +402,6 @@ public void detectPlayerFamilyCollision(){
         score += 1000;
       }
       family.remove(human);
-      System.out.println("collision");
     }
   }
 }
@@ -314,7 +429,6 @@ public void playerObstacleCollision(float playerX, float playerY, int playerSize
       if(playerY > obstacleY - obstacleSize && playerY < obstacleY + obstacleSize) {
         obstacles.remove(obstacle);
         player.lives--;
-        System.out.println(player.lives);
       }
     }
   }
@@ -330,7 +444,6 @@ public void playerRobotCollision(float playerX, float playerY, int playerSize){
       if(playerY - playerSize/2 < robotY + robotSize && playerY + playerSize/2 > robotY) {
         robots.remove(robot);
         player.lives--;
-        System.out.println(player.lives);
       }
     }
   }
@@ -395,9 +508,11 @@ public void spawnObstacles(){
 
       randomRoomIndex = map.randomRoomIndex();
       PVector randomPointInRoom = randomPointInRoom(randomRoomIndex);
-      obstacles.add(new Obstacle(randomPointInRoom.x, randomPointInRoom.y));
-      obstacleCount++;
-
+      if(checkSpawnLocation(randomPointInRoom)) {
+        spawns.add(randomPointInRoom);
+        obstacles.add(new Obstacle(randomPointInRoom.x, randomPointInRoom.y));
+        obstacleCount++;
+       }
     }
 }
 
@@ -409,14 +524,20 @@ public void spawnRobots() {
 
       randomRoomIndex = map.randomRoomIndex();
       PVector randomPointInRoom = randomPointInRoom(randomRoomIndex);
-      if(robotCount % 2 == 0) {
-        robots.add(new MeleeBot(randomPointInRoom.x, randomPointInRoom.y));
-      } else {
-        robots.add(new RangedBot(randomPointInRoom.x, randomPointInRoom.y));
-      }
+      if(checkSpawnLocation(randomPointInRoom)) {
+        if(robotCount % 2 == 0) {
+          robots.add(new MeleeBot(randomPointInRoom.x, randomPointInRoom.y));
+          spawns.add(randomPointInRoom);
+          robotCount++;
+        } else {
+          robots.add(new RangedBot(randomPointInRoom.x, randomPointInRoom.y));
+          spawns.add(randomPointInRoom);
+          robotCount++;
+        }
 
-      robotCount++;
+
     }
+  }
 }
 
 public void drawRobots(){
@@ -431,11 +552,11 @@ public PVector randomPointInRoom(int randomRoomIndex) {
   int boundarySpace = displayWidth/HUMAN_RADIUS_PROPORTION;
   Room randomRoom = map.rooms.get(randomRoomIndex);
 
-  float x1 = (randomRoom.position.x +(2 * boundarySpace));
-  float x2 = (randomRoom.position.x + randomRoom.width - (4 * boundarySpace));
+  float x1 = (randomRoom.position.x +(boundarySpace));
+  float x2 = (randomRoom.position.x + randomRoom.width - (2 * boundarySpace));
 
-  float y1 = (randomRoom.position.y + (2 * boundarySpace));
-  float y2 = (randomRoom.position.y + randomRoom.height - (4 * boundarySpace));
+  float y1 = (randomRoom.position.y + (boundarySpace));
+  float y2 = (randomRoom.position.y + randomRoom.height - (2 * boundarySpace));
 
   float randomX = random(x1, x2);
   float randomY = random(y1, y2);
@@ -448,10 +569,27 @@ public void drawObstacles() {
     obstacle.draw();
   }
 }
+
+public void printSpawns() {
+  for(PVector spawn : spawns) {
+    System.out.println(spawn);
+  }
+}
+
+public void checkRooms() {
+  for(Room room : map.rooms) {
+    if(room.position.x + room.width > displayWidth) {
+      System.out.println("bad x");
+    }
+    if(room.position.y + room.height > displayHeight) {
+      System.out.println("bad y");
+    }
+  }
+}
 class BSPNode {
 
-  final int MIN_PARTITION_SIZE = displayWidth/5;
-  final int CORRIDOR_SIZE = displayWidth/30;
+  final int MIN_PARTITION_SIZE = displayWidth/6;
+  final int CORRIDOR_SIZE = displayWidth/20;
 
   Partition partition;
   BSPNode leftChild;
@@ -514,8 +652,8 @@ class BSPNode {
     } else {
       PVector roomSize;
       PVector roomPosition;
-      roomSize = new PVector(random(3 * partition.width/4, partition.width - partition.width/8), random(3 * partition.height/4, partition.height - partition.height/8));
-      roomPosition = new PVector(random(partition.position.x + CORRIDOR_SIZE, partition.width - roomSize.x), random(partition.position.y + CORRIDOR_SIZE, partition.height - roomSize.y));
+      roomSize = new PVector(random(0.75f * partition.width, 0.9f * partition.width), random(0.75f * partition.height, 0.9f * partition.height));
+      roomPosition = new PVector(random(partition.position.x + 0.1f * partition.width, partition.position.x + 0.9f * partition.width - roomSize.x), random(partition.position.y + 0.1f * partition.height, partition.position.y + 0.9f * partition.height - roomSize.y));
       partition.room = new Room(roomPosition.x, roomPosition.y, roomSize.x, roomSize.y);
     }
   }
@@ -835,8 +973,8 @@ class Obstacle {
   float spin;
 
   Obstacle(float x, float y){
-    this.position = new PVector(x,y);
     this.size = displayWidth/OBSTACLE_SIZE;
+    this.position = new PVector(x + size/2,y + size/2);
     this.spin = ROTATION_SPEED;
     this.theta = 0;
   }

@@ -1,7 +1,7 @@
 class BSPNode {
 
-  final int MIN_PARTITION_SIZE = displayWidth/5;
-  final int CORRIDOR_SIZE = displayWidth/30;
+  final int MIN_PARTITION_SIZE = displayWidth/6;
+  final int CORRIDOR_SIZE = displayWidth/20;
 
   Partition partition;
   BSPNode leftChild;
@@ -64,8 +64,8 @@ class BSPNode {
     } else {
       PVector roomSize;
       PVector roomPosition;
-      roomSize = new PVector(random(3 * partition.width/4, partition.width - partition.width/8), random(3 * partition.height/4, partition.height - partition.height/8));
-      roomPosition = new PVector(random(partition.position.x + CORRIDOR_SIZE, partition.width - roomSize.x), random(partition.position.y + CORRIDOR_SIZE, partition.height - roomSize.y));
+      roomSize = new PVector(random(0.75 * partition.width, 0.9 * partition.width), random(0.75 * partition.height, 0.9 * partition.height));
+      roomPosition = new PVector(random(partition.position.x + 0.1 * partition.width, partition.position.x + 0.9 * partition.width - roomSize.x), random(partition.position.y + 0.1 * partition.height, partition.position.y + 0.9 * partition.height - roomSize.y));
       partition.room = new Room(roomPosition.x, roomPosition.y, roomSize.x, roomSize.y);
     }
   }

@@ -9,8 +9,8 @@ class Obstacle {
   float spin;
 
   Obstacle(float x, float y){
-    this.position = new PVector(x,y);
     this.size = displayWidth/OBSTACLE_SIZE;
+    this.position = new PVector(x + size/2,y + size/2);
     this.spin = ROTATION_SPEED;
     this.theta = 0;
   }

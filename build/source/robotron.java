@@ -19,6 +19,9 @@ final int BLACK = color(0),
 
 final int HUMAN_RADIUS_PROPORTION = 50;
 
+final int TEXT_POSITION = 50,
+          TEXT_SIZE = 100;
+
 Map map;
 Player player;
 boolean w, a, s, d;
@@ -31,8 +34,7 @@ int score;
 int size;
 int wave;
 boolean alive;
-
-
+boolean startScreen;
 
 
 public void setup () {
@@ -46,6 +48,7 @@ public void setup () {
   wave = 0;
   size = displayWidth/HUMAN_RADIUS_PROPORTION;
   alive = true;
+  startScreen = true;
   bullets = new ArrayList();
   family = new ArrayList();
   obstacles = new ArrayList();
@@ -59,28 +62,64 @@ public void setup () {
 
 public void draw () {
     background(0);
+    pushStyle();
+    textAlign(CENTER);
+    fill(255);
+    textSize(displayWidth/TEXT_SIZE);
+    text("Wave: " + wave, displayWidth/TEXT_POSITION, displayWidth/(TEXT_POSITION*2));
+    text("Lives: " + player.lives, 3.3f * displayWidth/TEXT_POSITION, displayWidth/(TEXT_POSITION*2));
+    text("Score: " + score, 5.7f * displayWidth/TEXT_POSITION, displayWidth/(TEXT_POSITION*2));
+
+    popStyle();
+
     if(alive) {
-      map.draw();
-      ensurePlayerInArea();
-      playerMove();
-      player.draw();
-      removeMissedBullets();
-      drawBullets();
-      drawFamily();
-      drawObstacles();
-      drawRobots();
-      detectPlayerFamilyCollision();
-      detectPlayerObstacleCollision();
-      detectBulletCollision();
-      alive = checkNotDead();
+      if(startScreen) {
+        pushStyle();
+        textAlign(CENTER);
+        textSize(64);
+        fill(0 ,255, 255);
+        text("ROBOTRON", displayWidth/2, displayHeight/2);
+        textSize(24);
+        text("Click to start", displayWidth/2, 3*displayHeight/4);
+        popStyle();
+      } else {
+        map.draw();
+        ensurePlayerInArea();
+        playerMove();
+        player.draw();
+        removeMissedBullets();
+        drawBullets();
+        drawFamily();
+        drawObstacles();
+        drawRobots();
+        detectPlayerFamilyCollision();
+        detectPlayerObstacleCollision();
+        detectBulletCollision();
+        newWave();
+        alive = checkNotDead();
+      }
+    } else {
+      pushStyle();
+      textAlign(CENTER);
+      textSize(64);
+      fill(255, 0 ,255);
+      text("GAME OVER", displayWidth/2, displayHeight/2);
+      textSize(24);
+      text("Click to Restart", displayWidth/2, 3*displayHeight/4);
+      popStyle();
     }
 }
 
+public void newWave(){
+  if(checkWaveEnd()) {
+    delay(300);
+    map = new Map();
+    reset();
+    wave++;
+  }
+}
+
 public void reset(){
-  map = new Map();
-  player.lives = 3;
-  score = 0;
-  wave = 0;
   bullets.clear();
   family.clear();
   obstacles.clear();
@@ -90,6 +129,15 @@ public void reset(){
   spawnFamilyAndSeekBots();
   spawnObstacles();
   spawnRobots();
+  alive = true;
+}
+
+public void newGame(){
+  map = new Map();
+  player.lives = 3;
+  score = 0;
+  wave = 0;
+  reset();
   alive = true;
 
 }
@@ -132,11 +180,16 @@ public void keyReleased() {
 }
 
 public void mousePressed(){
-  if(alive) {
-    bullets.add(new Bullet(player.position.x, player.position.y, mouseX, mouseY));
+  if(!startScreen) {
+    if(alive) {
+      bullets.add(new Bullet(player.position.x, player.position.y, mouseX, mouseY));
+    } else {
+      newGame();
+    }
   } else {
-    reset();
+    startScreen = false;
   }
+
 
 }
 
@@ -266,6 +319,10 @@ public void drawFamily() {
   }
 }
 
+public boolean checkWaveEnd(){
+  return (robots.size() == 0 ? true : false);
+}
+
 public void removeMissedBullets() {
   for(Bullet bullet : new ArrayList<Bullet>(bullets)) {
     int detectedColor = get((int) bullet.position.x, (int) bullet.position.y);
@@ -296,13 +353,14 @@ public void spawnFamilyAndSeekBots(){
 
         if(checkCentralRoomSpawn(randomPointInRoom, randomRoomIndex)) {
           robots.add(spawnSeekBot(seekBotSpawnPoint));
+          spawns.add(seekBotSpawnPoint);
         } else {
           robots.add(spawnDefaultSeekBot(randomRoomIndex));
         }
         humanCount++;
         selectedRooms.add(randomRoomIndex);
         spawns.add(randomPointInRoom);
-        spawns.add(seekBotSpawnPoint);
+
       }
 
     }
@@ -320,6 +378,7 @@ public SeekBot spawnDefaultSeekBot(int randomRoomIndex){
   float roomX = room.position.x + spawnRadius;
   float roomY = room.position.y + spawnRadius;
   PVector spawnLocation = new PVector(roomX, roomY);
+  spawns.add(spawnLocation);
 
   return spawnSeekBot(spawnLocation);
 
@@ -589,7 +648,7 @@ public void checkRooms() {
 class BSPNode {
 
   final int MIN_PARTITION_SIZE = displayWidth/6;
-  final int CORRIDOR_SIZE = displayWidth/20;
+  final int CORRIDOR_SIZE = displayWidth/30;
 
   Partition partition;
   BSPNode leftChild;
@@ -912,6 +971,13 @@ class Map {
 
   public void draw(){
     for(Room room : rooms) {
+      if(rooms.get(0) == room) {
+        pushStyle();
+        strokeWeight(8);
+        stroke(255, 0, 0);
+        rect(room.position.x, room.position.y, room.width, room.height);
+        popStyle();
+      }
       room.draw();
     }
     for(Room corridor : corridors) {

@@ -13,6 +13,13 @@ class Map {
 
   void draw(){
     for(Room room : rooms) {
+      if(rooms.get(0) == room) {
+        pushStyle();
+        strokeWeight(8);
+        stroke(255, 0, 0);
+        rect(room.position.x, room.position.y, room.width, room.height);
+        popStyle();
+      }
       room.draw();
     }
     for(Room corridor : corridors) {

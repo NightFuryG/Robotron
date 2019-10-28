@@ -1,7 +1,7 @@
 class BSPNode {
 
   final int MIN_PARTITION_SIZE = displayWidth/6;
-  final int CORRIDOR_SIZE = displayWidth/20;
+  final int CORRIDOR_SIZE = displayWidth/30;
 
   Partition partition;
   BSPNode leftChild;

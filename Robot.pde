@@ -1,5 +1,5 @@
 class Robot {
-  final int ROBOT_SIZE = 50;
+  final int ROBOT_SIZE = 80;
 
   PVector position;
   PVector velocity;
@@ -14,5 +14,5 @@ class Robot {
   void draw () {
 
   }
-  
+
 }

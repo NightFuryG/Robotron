@@ -1,6 +1,6 @@
 class Obstacle {
 
-  final int OBSTACLE_SIZE = 50;
+  final int OBSTACLE_SIZE = 80;
   final float ROTATION_SPEED = 0.1f;
 
   PVector position;

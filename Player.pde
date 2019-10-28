@@ -1,7 +1,7 @@
 class Player {
 
   final int PLAYER_SPEED = displayWidth/750,
-            PLAYER_RADIUS = displayWidth/50,
+            PLAYER_RADIUS = displayWidth/80,
             PLAYER_LIVES = 3;
 
 

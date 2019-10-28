@@ -1,6 +1,6 @@
 class Human {
 
-  final int HUMAN_SIZE = displayWidth/50;
+  final int HUMAN_SIZE = displayWidth/80;
 
   PVector position;
   int humanSize;

@@ -6,6 +6,10 @@ final int HUMAN_RADIUS_PROPORTION = 50;
 final int TEXT_POSITION = 50,
           TEXT_SIZE = 100;
 
+final int NEW_LIFE = 1000;
+
+final int INVINCIBLE_DURATION = 10000;
+
 Map map;
 Player player;
 boolean w, a, s, d;
@@ -14,11 +18,17 @@ ArrayList<Human> family;
 ArrayList<Obstacle> obstacles;
 ArrayList<Robot> robots;
 ArrayList<PVector> spawns;
+ArrayList<PowerUp> powerUps;
 int score;
 int size;
 int wave;
+int newLife;
 boolean alive;
 boolean startScreen;
+boolean bombPowerUp;
+boolean invinciblePowerUp;
+int startTime;
+int invincibleDuration;
 
 
 void setup () {
@@ -30,17 +40,22 @@ void setup () {
   w = a = s = d = false;
   score = 0;
   wave = 0;
+  newLife = 1;
   size = displayWidth/HUMAN_RADIUS_PROPORTION;
   alive = true;
   startScreen = true;
-  bullets = new ArrayList();
-  family = new ArrayList();
-  obstacles = new ArrayList();
-  robots = new ArrayList();
-  spawns = new ArrayList();
+  bombPowerUp = false;
+  invinciblePowerUp = false;
+  bullets = new ArrayList<Bullet>();
+  family = new ArrayList<Human>();
+  obstacles = new ArrayList<Obstacle>();
+  robots = new ArrayList<Robot>();
+  spawns = new ArrayList<PVector>();
+  powerUps = new ArrayList<PowerUp>();
   spawnFamilyAndSeekBots();
   spawnObstacles();
   spawnRobots();
+  spawnPowerUps();
   checkRooms();
 }
 
@@ -76,9 +91,13 @@ void draw () {
         drawFamily();
         drawObstacles();
         drawRobots();
+        drawPowerUps();
         detectPlayerFamilyCollision();
-        detectPlayerObstacleCollision();
+        detectEnemyCollision();
         detectBulletCollision();
+        detectPlayerPowerUpCollision();
+        checkPowerUps();
+        checkNewLife();
         newWave();
         alive = checkNotDead();
       }
@@ -96,7 +115,6 @@ void draw () {
 
 void newWave(){
   if(checkWaveEnd()) {
-    delay(300);
     map = new Map();
     reset();
     wave++;
@@ -113,12 +131,16 @@ void reset(){
   spawnFamilyAndSeekBots();
   spawnObstacles();
   spawnRobots();
+  spawnPowerUps();
   alive = true;
+  bombPowerUp = false;
+  invinciblePowerUp = false;
 }
 
 void newGame(){
   map = new Map();
   player.lives = 3;
+  newLife = 1;
   score = 0;
   wave = 0;
   reset();
@@ -126,8 +148,58 @@ void newGame(){
 
 }
 
-boolean checkNotDead(){
-  return (player.lives > 0 ? true : false);
+boolean checkNotDead() {
+  if(player.lives > 0 || invinciblePowerUp) {
+    return true;
+  }
+  return false;
+}
+
+void checkNewLife() {
+  if(score >= newLife * NEW_LIFE) {
+    player.lives++;
+  }
+}
+
+void checkPowerUps() {
+  if(bombPowerUp) {
+    activateBomb();
+  }
+  if(invinciblePowerUp) {
+    startTime = millis();
+    activeInvincible(startTime);
+  }
+}
+
+void activeInvincible(int startTime) {
+  int lives = player.lives;
+
+  if(!(millis() < startTime + INVINCIBLE_DURATION)) {
+    invinciblePowerUp = false;
+    System.out.println("hello katei");
+  }
+}
+
+void activateBomb() {
+
+  int countA = 0;
+  int countB = 0;
+
+  for(Robot robot : new ArrayList<Robot>(robots)) {
+    if(countA < robots.size()/2 + 1) {
+      robots.remove(robot);
+      countA++;
+    }
+  }
+
+  for(Obstacle obstacle : new ArrayList<Obstacle>(obstacles)) {
+    if(countB < obstacles.size()/2 + 1) {
+      obstacles.remove(obstacle);
+      countB++;
+    }
+  }
+
+  bombPowerUp = false;
 }
 
 
@@ -442,14 +514,40 @@ void detectPlayerFamilyCollision(){
     int humanRadius = human.humanSize;
     if(dist(playerX, playerY, humanX, humanY) < playerRadius/2 + humanRadius/2) {
       if(human.member == 'F') {
-        score += 1000;
+        score += 100;
+      } else if (human.member == 'M'){
+        score += 75;
+      } else {
+        score += 50;
       }
       family.remove(human);
     }
   }
 }
 
-void detectPlayerObstacleCollision() {
+void detectPlayerPowerUpCollision(){
+  float playerX = player.position.x;
+  float playerY = player.position.y;
+  int playerRadius = player.playerSize;
+
+  for(PowerUp powerUp : new ArrayList<PowerUp>(powerUps)){
+    float powerUpX = powerUp.position.x;
+    float powerUpY = powerUp.position.y;
+    int powerUpRadius = powerUp.size;
+
+    if(dist(playerX, playerY, powerUpX, powerUpY) < playerRadius/2 + powerUpRadius/2){
+      if(powerUp instanceof BombPowerUp) {
+        bombPowerUp = true;
+        powerUps.remove(powerUp);
+      } else {
+        invinciblePowerUp = true;
+        powerUps.remove(powerUp);
+      }
+    }
+  }
+}
+
+void detectEnemyCollision() {
   float playerX = player.position.x;
   float playerY = player.position.y;
   int playerRadius = player.playerSize;
@@ -471,7 +569,10 @@ void playerObstacleCollision(float playerX, float playerY, int playerSize){
     if(playerX > obstacleX - obstacleSize && playerX < obstacleX + obstacleSize) {
       if(playerY > obstacleY - obstacleSize && playerY < obstacleY + obstacleSize) {
         obstacles.remove(obstacle);
-        player.lives--;
+        if(!invinciblePowerUp) {
+          player.lives--;
+        }
+
       }
     }
   }
@@ -486,7 +587,9 @@ void playerRobotCollision(float playerX, float playerY, int playerSize){
     if(playerX - playerSize/2 < robotX + robotSize && playerX + playerSize/2 > robotX) {
       if(playerY - playerSize/2 < robotY + robotSize && playerY + playerSize/2 > robotY) {
         robots.remove(robot);
-        player.lives--;
+        if(!invinciblePowerUp) {
+          player.lives--;
+        }
       }
     }
   }
@@ -495,13 +598,52 @@ void playerRobotCollision(float playerX, float playerY, int playerSize){
 void detectBulletCollision(){
   for(Bullet bullet : new ArrayList<Bullet>(bullets)){
 
-
     if(obstacles.size() > 0) {
       bulletObstacleCollision(bullet);
     }
 
     if(robots.size() > 0) {
       bulletRobotCollision(bullet);
+    }
+
+    if(family.size() > 0) {
+      bulletHumanCollision(bullet);
+    }
+
+    if(powerUps.size() > 0) {
+      bulletPowerUpCollision(bullet);
+    }
+  }
+}
+
+void bulletHumanCollision(Bullet bullet) {
+  float bulletX = bullet.position.x;
+  float bulletY = bullet.position.y;
+
+  for(Human human : new ArrayList<Human>(family)) {
+    float humanX = human.position.x;
+    float humanY = human.position.y;
+    int humanSize = human.humanSize;
+
+    if(dist(bulletX, bulletY, humanX, humanY) < humanSize/2) {
+      family.remove(human);
+      bullets.remove(bullet);
+    }
+  }
+}
+
+void bulletPowerUpCollision(Bullet bullet) {
+  float bulletX = bullet.position.x;
+  float bulletY = bullet.position.y;
+
+  for(PowerUp powerUp : new ArrayList<PowerUp>(powerUps)) {
+    float powerUpX = powerUp.position.x;
+    float powerUpY = powerUp.position.y;
+    int powerUpSize = powerUp.size;
+
+    if(dist(bulletX, bulletY, powerUpX, powerUpY) < powerUpSize/2) {
+      powerUps.remove(powerUp);
+      bullets.remove(bullet);
     }
   }
 }
@@ -519,6 +661,7 @@ void bulletObstacleCollision(Bullet bullet) {
       if(bulletY > obstacleY - obstacleSize && bulletY < obstacleY + obstacleSize) {
         obstacles.remove(obstacle);
         bullets.remove(bullet);
+        score += 5;
       }
     }
   }
@@ -538,6 +681,7 @@ void bulletRobotCollision(Bullet bullet) {
       if(bulletY > robotY - robotSize && bulletY < robotY + robotSize) {
         robots.remove(robot);
         bullets.remove(bullet);
+        score += 10;
       }
     }
   }
@@ -568,7 +712,7 @@ void spawnRobots() {
       randomRoomIndex = map.randomRoomIndex();
       PVector randomPointInRoom = randomPointInRoom(randomRoomIndex);
       if(checkSpawnLocation(randomPointInRoom)) {
-        if(robotCount % 2 == 0) {
+        if(robotCount % 2 == 1) {
           robots.add(new MeleeBot(randomPointInRoom.x, randomPointInRoom.y));
           spawns.add(randomPointInRoom);
           robotCount++;
@@ -583,9 +727,36 @@ void spawnRobots() {
   }
 }
 
+void spawnPowerUps(){
+  int randomRoomIndex;
+  int powerUpCount = 0;
+
+  while(powerUpCount < 2) {
+    randomRoomIndex = map.randomRoomIndex();
+    PVector randomPointInRoom = randomPointInRoom(randomRoomIndex);
+    if(checkSpawnLocation(randomPointInRoom)) {
+      if(powerUpCount == 0) {
+        powerUps.add(new BombPowerUp(randomPointInRoom.x, randomPointInRoom.y));
+        spawns.add(randomPointInRoom);
+        powerUpCount++;
+      } else {
+        powerUps.add(new InvinciblePowerUp(randomPointInRoom.x, randomPointInRoom.y));
+        spawns.add(randomPointInRoom);
+        powerUpCount++;
+      }
+    }
+  }
+}
+
 void drawRobots(){
   for(Robot robot : robots) {
     robot.draw();
+  }
+}
+
+void drawPowerUps(){
+  for(PowerUp powerUp : powerUps){
+    powerUp.draw();
   }
 }
 

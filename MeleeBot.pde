@@ -1,11 +1,12 @@
 class MeleeBot extends Robot {
 
-  MeleeBot(float x, float y) {
-    super(x , y);
+  MeleeBot(float x, float y, int roomIndex) {
+    super(x , y, roomIndex);
   }
 
   void update() {
-
+    this.ensureRobotInArea();
+    this.wander();
   }
 
   void display() {
@@ -14,6 +15,7 @@ class MeleeBot extends Robot {
   }
 
   void draw(){
+    update();
     display();
   }
 

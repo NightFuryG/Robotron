@@ -1,7 +1,7 @@
 class SeekBot extends Robot {
 
-  SeekBot (float x, float  y) {
-    super(x, y);
+  SeekBot (float x, float  y, int roomIndex) {
+    super(x, y, roomIndex);
   }
 
   void update(){}

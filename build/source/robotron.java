@@ -44,6 +44,7 @@ boolean startScreen;
 boolean bombPowerUp;
 boolean invinciblePowerUp;
 int startTime;
+boolean powerupstarted;
 int invincibleDuration;
 
 
@@ -68,6 +69,7 @@ public void setup () {
   robots = new ArrayList<Robot>();
   spawns = new ArrayList<PVector>();
   powerUps = new ArrayList<PowerUp>();
+
   spawnFamilyAndSeekBots();
   spawnObstacles();
   spawnRobots();
@@ -101,8 +103,11 @@ public void draw () {
         map.draw();
         ensurePlayerInArea();
         playerMove();
-        player.draw();
+        updatePlayerRoom();
+        updateRobotRoom();
         removeMissedBullets();
+        rangedBotFire();
+        player.draw();
         drawBullets();
         drawFamily();
         drawObstacles();
@@ -182,7 +187,10 @@ public void checkPowerUps() {
     activateBomb();
   }
   if(invinciblePowerUp) {
-    startTime = millis();
+    if (!powerupstarted) {
+      startTime = millis();
+      powerupstarted = true;
+    }
     activeInvincible(startTime);
   }
 }
@@ -227,6 +235,46 @@ public Player spawnPlayer() {
   return new Player(startX, startY);
 }
 
+public void updatePlayerRoom(){
+  float playerX = player.position.x;
+  float playerY = player.position.y;
+  int playerSize = player.playerSize;
+
+  for(Room room : map.rooms) {
+    float roomX = room.position.x;
+    float roomY = room.position.y;
+    int roomWidth = room.width;
+    int roomHeight = room.height;
+    if(playerX > roomX && playerX < roomX + roomWidth){
+	    if(playerY > roomY && playerY < roomY + roomHeight){
+        player.roomIndex = map.rooms.indexOf(room);
+      }
+    }
+  }
+}
+
+public void updateRobotRoom() {
+  for(Robot robot : robots) {
+    float robotX = robot.position.x;
+    float robotY = robot.position.y;
+    int robotSize = robot.size;
+
+    for(Room room : map.rooms) {
+      float roomX = room.position.x;
+      float roomY = room.position.y;
+      int roomWidth = room.width;
+      int roomHeight = room.height;
+      if(robotX > roomX && robotX < roomX + roomWidth){
+  	    if(robotY > roomY && robotY < roomY + roomHeight){
+          robot.roomIndex = map.rooms.indexOf(room);
+        }
+      }
+    }
+  }
+}
+
+
+
 public void keyPressed() {
     if(key == 'w') {
       w = true;
@@ -254,15 +302,23 @@ public void keyReleased() {
 public void mousePressed(){
   if(!startScreen) {
     if(alive) {
-      bullets.add(new Bullet(player.position.x, player.position.y, mouseX, mouseY));
+      bullets.add(new Bullet(player.position.x, player.position.y, mouseX, mouseY, false));
     } else {
       newGame();
     }
   } else {
     startScreen = false;
   }
+}
 
-
+public void rangedBotFire(){
+  for(Robot robot : robots) {
+    if(robot instanceof RangedBot) {
+      if(robot.roomIndex == player.roomIndex)
+        if(frameCount % 40 == 0)
+          bullets.add(new Bullet(robot.position.x + robot.size/2, robot.position.y + robot.size/2, player.position.x, player.position.y, true));
+    }
+  }
 }
 
 public void playerMove() {
@@ -413,7 +469,6 @@ public void spawnFamilyAndSeekBots(){
   while(humanCount < 3) {
 
     randomRoomIndex = map.randomRoomIndex();
-
     if (!selectedRooms.contains(randomRoomIndex)) {
 
 
@@ -424,7 +479,7 @@ public void spawnFamilyAndSeekBots(){
         spawnFamilyMember(humanCount, randomPointInRoom);
 
         if(checkCentralRoomSpawn(randomPointInRoom, randomRoomIndex)) {
-          robots.add(spawnSeekBot(seekBotSpawnPoint));
+          robots.add(spawnSeekBot(seekBotSpawnPoint, randomRoomIndex));
           spawns.add(seekBotSpawnPoint);
         } else {
           robots.add(spawnDefaultSeekBot(randomRoomIndex));
@@ -440,8 +495,8 @@ public void spawnFamilyAndSeekBots(){
   }
 }
 
-public SeekBot spawnSeekBot(PVector seekBotSpawnPoint) {
-  return new SeekBot(seekBotSpawnPoint.x - size/2, seekBotSpawnPoint.y - size/2);
+public SeekBot spawnSeekBot(PVector seekBotSpawnPoint, int roomIndex) {
+  return new SeekBot(seekBotSpawnPoint.x - size/2, seekBotSpawnPoint.y - size/2, roomIndex);
 }
 
 public SeekBot spawnDefaultSeekBot(int randomRoomIndex){
@@ -452,7 +507,7 @@ public SeekBot spawnDefaultSeekBot(int randomRoomIndex){
   PVector spawnLocation = new PVector(roomX, roomY);
   spawns.add(spawnLocation);
 
-  return spawnSeekBot(spawnLocation);
+  return spawnSeekBot(spawnLocation, randomRoomIndex);
 
 }
 
@@ -695,9 +750,11 @@ public void bulletRobotCollision(Bullet bullet) {
 
     if(bulletX > robotX - robotSize && bulletX < robotX + robotSize) {
       if(bulletY > robotY - robotSize && bulletY < robotY + robotSize) {
-        robots.remove(robot);
-        bullets.remove(bullet);
-        score += 10;
+        if(!bullet.enemy) {
+          robots.remove(robot);
+          bullets.remove(bullet);
+          score += 10;
+        }
       }
     }
   }
@@ -729,11 +786,12 @@ public void spawnRobots() {
       PVector randomPointInRoom = randomPointInRoom(randomRoomIndex);
       if(checkSpawnLocation(randomPointInRoom)) {
         if(robotCount % 2 == 1) {
-          robots.add(new MeleeBot(randomPointInRoom.x, randomPointInRoom.y));
+          robots.add(new MeleeBot(randomPointInRoom.x, randomPointInRoom.y, randomRoomIndex));
           spawns.add(randomPointInRoom);
           robotCount++;
         } else {
-          robots.add(new RangedBot(randomPointInRoom.x, randomPointInRoom.y));
+          robots.add(new RangedBot(randomPointInRoom.x, randomPointInRoom.y, randomRoomIndex));
+          System.out.println("HI");
           spawns.add(randomPointInRoom);
           robotCount++;
         }
@@ -1059,15 +1117,15 @@ class Bullet {
   PVector direction;
   PVector velocity;
   PVector acceleration;
+  boolean enemy;
 
-  Bullet(float startX, float startY, int endX, int endY) {
+  Bullet(float startX, float startY, float endX, float endY, boolean enemy) {
     this.position = new PVector(startX, startY);
     this.destination = new PVector(endX, endY);
     this.velocity = new PVector(0,0);
     this.direction = calculateDirection();
     this.acceleration = calculateAcceleration();
-
-
+    this.enemy = enemy;
   }
 
   public PVector calculateDirection() {
@@ -1091,7 +1149,12 @@ class Bullet {
   }
 
   public void display(){
-    fill(255,0,0);
+    if(enemy) {
+      fill(255,0,0);
+    } else {
+      fill(0,255,255);
+    }
+
     circle(position.x, position.y, bulletSize);
   }
 
@@ -1120,9 +1183,9 @@ class Human {
   }
 
   public void display(){
-    fill(255,0,0);
+    fill(0,255,255);
     circle(position.x, position.y, humanSize);
-    fill(255);
+    fill(0);
     textAlign(CENTER, CENTER);
     text(member, position.x, position.y);
   }
@@ -1175,7 +1238,7 @@ class Map {
       if(rooms.get(0) == room) {
         pushStyle();
         strokeWeight(8);
-        stroke(255, 0, 0);
+        stroke( 0,255, 255);
         rect(room.position.x, room.position.y, room.width, room.height);
         popStyle();
       }
@@ -1211,12 +1274,13 @@ class Map {
 }
 class MeleeBot extends Robot {
 
-  MeleeBot(float x, float y) {
-    super(x , y);
+  MeleeBot(float x, float y, int roomIndex) {
+    super(x , y, roomIndex);
   }
 
   public void update() {
-
+    this.ensureRobotInArea();
+    this.wander();
   }
 
   public void display() {
@@ -1225,6 +1289,7 @@ class MeleeBot extends Robot {
   }
 
   public void draw(){
+    update();
     display();
   }
 
@@ -1305,6 +1370,7 @@ class Player {
   int playerSize;
   int playerSpeed;
   int lives;
+  int roomIndex;
 
   Player(int x, int y) {
     this.position = new PVector(x, y);
@@ -1312,6 +1378,7 @@ class Player {
     this.playerSize = PLAYER_RADIUS;
     this.playerSpeed = PLAYER_SPEED;
     this.lives = PLAYER_LIVES;
+    this.roomIndex = 0;
   }
 
   public void move(int i) {
@@ -1342,7 +1409,7 @@ class Player {
   }
 
   public void display() {
-    fill(255,0,0);
+    fill(0,255, 255);
     circle(position.x, position.y, playerSize);
   }
 
@@ -1368,8 +1435,13 @@ class PowerUp {
 }
 class RangedBot extends Robot {
 
-  RangedBot(float x, float  y) {
-    super(x, y);
+  RangedBot(float x, float  y, int roomIndex) {
+    super(x, y, roomIndex);
+  }
+
+  public void update(){
+    this.ensureRobotInArea();
+    this.wander();
   }
 
   public void display() {
@@ -1378,27 +1450,142 @@ class RangedBot extends Robot {
   }
 
   public void draw(){
+    update();
     display();
   }
 }
 class Robot {
   final int ROBOT_SIZE = 80;
 
+  final float ORIENTATION_INCREMENT = PI/16;
+  final float ROBOT_SPEED = displayWidth/1000;
+
   PVector position;
   PVector velocity;
+  float orientation;
+  int roomIndex;
   int size;
 
-  Robot(float x, float y) {
+  Robot(float x, float y, int roomIndex) {
     this.position = new PVector(x, y);
-    this.velocity = new PVector(0,0);
+    this.velocity = new PVector(1,1);
     this.size = displayWidth/ROBOT_SIZE;
+    this.orientation = random(-2*PI, 2*PI);
+    this.roomIndex = roomIndex;
   }
 
   public void draw () {
 
   }
 
+  public void wander(){
+
+    velocity.x = cos(orientation);
+    velocity.y = sin(orientation);
+    velocity.mult(ROBOT_SPEED);
+
+
+
+    position.add(velocity);
+
+    orientation += random(0, ORIENTATION_INCREMENT) - random(0, ORIENTATION_INCREMENT);
+
+    if(orientation > PI) {
+      orientation -= 2*PI;
+    } else if (orientation < - PI) {
+      orientation += 2*PI;
+    }
+
+  }
+
+  public void ensureRobotInArea() {
+    int cornerBounce = this.size*10;
+
+    if(!detectNotBlack(getLeftColor()) || detectLeftEdge()) {
+      if (this.velocity.x < 0) {
+        orientation += PI;
+      } else if (this.velocity.x >= 0) {
+        orientation = PI/2;
+      }
+    }
+    if(!detectNotBlack(getRightColor()) || detectRightEdge()){
+      if (this.velocity.x > 0) {
+        orientation -= PI;
+      } else if (this.velocity.x <= 0) {
+        orientation = -PI/2;
+      }
+    }
+    if(!detectNotBlack(getUpColor()) || detectTopEdge()){
+      if (this.velocity.y < 0) {
+        orientation -= PI;
+      } else if (this.velocity.y >= 0) {
+        orientation = PI;
+      }
+    }
+    if(!detectNotBlack(getDownColor()) || detectBottomEdge()){
+      if (this.velocity.y > 0) {
+        orientation += PI;
+      } else if (this.velocity.y <= 0) {
+        orientation = 2*PI;
+      }
+
+    }
 }
+
+
+     public boolean detectBottomEdge() {
+      int downY= (int) this.position.y + this.size;
+      return downY >= displayHeight;
+    }
+
+     public boolean detectLeftEdge(){
+      int leftX = (int) this.position.x;
+      return leftX <= 0;
+    }
+
+     public boolean detectRightEdge(){
+      int rightX = (int) this.position.x + this.size;
+      return rightX >= displayWidth;
+    }
+
+     public boolean detectTopEdge(){
+      int topY = (int) this.position.y;
+      return topY <= 0;
+
+    }
+
+     public int getLeftColor() {
+      int leftX = (int) this.position.x;
+      int leftY = (int) this.position.y;
+      int leftColor = get(leftX, leftY);
+      return leftColor;
+    }
+
+     public int getRightColor() {
+      int rightX = (int) this.position.x + this.size;
+      int rightY = (int) this.position.y;
+      int rightColor = get(rightX, rightY);
+      return rightColor;
+    }
+
+     public int getUpColor() {
+      int upX = (int) this.position.x;
+      int upY = (int) this.position.y;
+      int upColor = get(upX, upY);
+      return upColor;
+    }
+
+     public int getDownColor() {
+      int downX = (int) this.position.x;
+      int downY= (int) this.position.y + this.size;
+      int downColor = get(downX, downY);
+      return downColor;
+    }
+
+    public boolean detectNotBlack(int inColor){
+      return inColor != BLACK;
+    }
+  }
 class Room {
   PVector position;
   int height;
@@ -1425,8 +1612,8 @@ class Room {
 }
 class SeekBot extends Robot {
 
-  SeekBot (float x, float  y) {
-    super(x, y);
+  SeekBot (float x, float  y, int roomIndex) {
+    super(x, y, roomIndex);
   }
 
   public void update(){}

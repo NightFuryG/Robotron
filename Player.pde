@@ -11,6 +11,7 @@ class Player {
   int playerSize;
   int playerSpeed;
   int lives;
+  int roomIndex;
 
   Player(int x, int y) {
     this.position = new PVector(x, y);
@@ -18,6 +19,7 @@ class Player {
     this.playerSize = PLAYER_RADIUS;
     this.playerSpeed = PLAYER_SPEED;
     this.lives = PLAYER_LIVES;
+    this.roomIndex = 0;
   }
 
   void move(int i) {
@@ -48,7 +50,7 @@ class Player {
   }
 
   void display() {
-    fill(255,0,0);
+    fill(0,255, 255);
     circle(position.x, position.y, playerSize);
   }
 

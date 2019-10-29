@@ -8,15 +8,15 @@ class Bullet {
   PVector direction;
   PVector velocity;
   PVector acceleration;
+  boolean enemy;
 
-  Bullet(float startX, float startY, int endX, int endY) {
+  Bullet(float startX, float startY, float endX, float endY, boolean enemy) {
     this.position = new PVector(startX, startY);
     this.destination = new PVector(endX, endY);
     this.velocity = new PVector(0,0);
     this.direction = calculateDirection();
     this.acceleration = calculateAcceleration();
-
-
+    this.enemy = enemy;
   }
 
   PVector calculateDirection() {
@@ -40,7 +40,12 @@ class Bullet {
   }
 
   void display(){
-    fill(255,0,0);
+    if(enemy) {
+      fill(255,0,0);
+    } else {
+      fill(0,255,255);
+    }
+
     circle(position.x, position.y, bulletSize);
   }
 

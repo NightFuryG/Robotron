@@ -16,7 +16,7 @@ class Map {
       if(rooms.get(0) == room) {
         pushStyle();
         strokeWeight(8);
-        stroke(255, 0, 0);
+        stroke( 0,255, 255);
         rect(room.position.x, room.position.y, room.width, room.height);
         popStyle();
       }

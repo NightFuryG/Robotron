@@ -28,6 +28,7 @@ boolean startScreen;
 boolean bombPowerUp;
 boolean invinciblePowerUp;
 int startTime;
+boolean powerupstarted;
 int invincibleDuration;
 
 
@@ -52,6 +53,7 @@ void setup () {
   robots = new ArrayList<Robot>();
   spawns = new ArrayList<PVector>();
   powerUps = new ArrayList<PowerUp>();
+
   spawnFamilyAndSeekBots();
   spawnObstacles();
   spawnRobots();
@@ -85,8 +87,11 @@ void draw () {
         map.draw();
         ensurePlayerInArea();
         playerMove();
-        player.draw();
+        updatePlayerRoom();
+        updateRobotRoom();
         removeMissedBullets();
+        rangedBotFire();
+        player.draw();
         drawBullets();
         drawFamily();
         drawObstacles();
@@ -166,7 +171,10 @@ void checkPowerUps() {
     activateBomb();
   }
   if(invinciblePowerUp) {
-    startTime = millis();
+    if (!powerupstarted) {
+      startTime = millis();
+      powerupstarted = true;
+    }
     activeInvincible(startTime);
   }
 }
@@ -211,6 +219,46 @@ Player spawnPlayer() {
   return new Player(startX, startY);
 }
 
+void updatePlayerRoom(){
+  float playerX = player.position.x;
+  float playerY = player.position.y;
+  int playerSize = player.playerSize;
+
+  for(Room room : map.rooms) {
+    float roomX = room.position.x;
+    float roomY = room.position.y;
+    int roomWidth = room.width;
+    int roomHeight = room.height;
+    if(playerX > roomX && playerX < roomX + roomWidth){
+	    if(playerY > roomY && playerY < roomY + roomHeight){
+        player.roomIndex = map.rooms.indexOf(room);
+      }
+    }
+  }
+}
+
+void updateRobotRoom() {
+  for(Robot robot : robots) {
+    float robotX = robot.position.x;
+    float robotY = robot.position.y;
+    int robotSize = robot.size;
+
+    for(Room room : map.rooms) {
+      float roomX = room.position.x;
+      float roomY = room.position.y;
+      int roomWidth = room.width;
+      int roomHeight = room.height;
+      if(robotX > roomX && robotX < roomX + roomWidth){
+  	    if(robotY > roomY && robotY < roomY + roomHeight){
+          robot.roomIndex = map.rooms.indexOf(room);
+        }
+      }
+    }
+  }
+}
+
+
+
 void keyPressed() {
     if(key == 'w') {
       w = true;
@@ -238,15 +286,23 @@ void keyReleased() {
 void mousePressed(){
   if(!startScreen) {
     if(alive) {
-      bullets.add(new Bullet(player.position.x, player.position.y, mouseX, mouseY));
+      bullets.add(new Bullet(player.position.x, player.position.y, mouseX, mouseY, false));
     } else {
       newGame();
     }
   } else {
     startScreen = false;
   }
+}
 
-
+void rangedBotFire(){
+  for(Robot robot : robots) {
+    if(robot instanceof RangedBot) {
+      if(robot.roomIndex == player.roomIndex)
+        if(frameCount % 40 == 0)
+          bullets.add(new Bullet(robot.position.x + robot.size/2, robot.position.y + robot.size/2, player.position.x, player.position.y, true));
+    }
+  }
 }
 
 void playerMove() {
@@ -397,7 +453,6 @@ void spawnFamilyAndSeekBots(){
   while(humanCount < 3) {
 
     randomRoomIndex = map.randomRoomIndex();
-
     if (!selectedRooms.contains(randomRoomIndex)) {
 
 
@@ -408,7 +463,7 @@ void spawnFamilyAndSeekBots(){
         spawnFamilyMember(humanCount, randomPointInRoom);
 
         if(checkCentralRoomSpawn(randomPointInRoom, randomRoomIndex)) {
-          robots.add(spawnSeekBot(seekBotSpawnPoint));
+          robots.add(spawnSeekBot(seekBotSpawnPoint, randomRoomIndex));
           spawns.add(seekBotSpawnPoint);
         } else {
           robots.add(spawnDefaultSeekBot(randomRoomIndex));
@@ -424,8 +479,8 @@ void spawnFamilyAndSeekBots(){
   }
 }
 
-SeekBot spawnSeekBot(PVector seekBotSpawnPoint) {
-  return new SeekBot(seekBotSpawnPoint.x - size/2, seekBotSpawnPoint.y - size/2);
+SeekBot spawnSeekBot(PVector seekBotSpawnPoint, int roomIndex) {
+  return new SeekBot(seekBotSpawnPoint.x - size/2, seekBotSpawnPoint.y - size/2, roomIndex);
 }
 
 SeekBot spawnDefaultSeekBot(int randomRoomIndex){
@@ -436,7 +491,7 @@ SeekBot spawnDefaultSeekBot(int randomRoomIndex){
   PVector spawnLocation = new PVector(roomX, roomY);
   spawns.add(spawnLocation);
 
-  return spawnSeekBot(spawnLocation);
+  return spawnSeekBot(spawnLocation, randomRoomIndex);
 
 }
 
@@ -679,9 +734,11 @@ void bulletRobotCollision(Bullet bullet) {
 
     if(bulletX > robotX - robotSize && bulletX < robotX + robotSize) {
       if(bulletY > robotY - robotSize && bulletY < robotY + robotSize) {
-        robots.remove(robot);
-        bullets.remove(bullet);
-        score += 10;
+        if(!bullet.enemy) {
+          robots.remove(robot);
+          bullets.remove(bullet);
+          score += 10;
+        }
       }
     }
   }
@@ -713,11 +770,12 @@ void spawnRobots() {
       PVector randomPointInRoom = randomPointInRoom(randomRoomIndex);
       if(checkSpawnLocation(randomPointInRoom)) {
         if(robotCount % 2 == 1) {
-          robots.add(new MeleeBot(randomPointInRoom.x, randomPointInRoom.y));
+          robots.add(new MeleeBot(randomPointInRoom.x, randomPointInRoom.y, randomRoomIndex));
           spawns.add(randomPointInRoom);
           robotCount++;
         } else {
-          robots.add(new RangedBot(randomPointInRoom.x, randomPointInRoom.y));
+          robots.add(new RangedBot(randomPointInRoom.x, randomPointInRoom.y, randomRoomIndex));
+          System.out.println("HI");
           spawns.add(randomPointInRoom);
           robotCount++;
         }

@@ -1,7 +1,12 @@
 class RangedBot extends Robot {
 
-  RangedBot(float x, float  y) {
-    super(x, y);
+  RangedBot(float x, float  y, int roomIndex) {
+    super(x, y, roomIndex);
+  }
+
+  void update(){
+    this.ensureRobotInArea();
+    this.wander();
   }
 
   void display() {
@@ -10,6 +15,7 @@ class RangedBot extends Robot {
   }
 
   void draw(){
+    update();
     display();
   }
 }

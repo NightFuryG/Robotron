@@ -18,9 +18,9 @@ class Human {
   }
 
   void display(){
-    fill(255,0,0);
+    fill(0,255,255);
     circle(position.x, position.y, humanSize);
-    fill(255);
+    fill(0);
     textAlign(CENTER, CENTER);
     text(member, position.x, position.y);
   }

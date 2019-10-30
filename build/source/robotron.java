@@ -450,7 +450,11 @@ public void drawBullets() {
 
 public void drawFamily() {
   for(Human human : family) {
-    human.draw((SeekBot) robots.get(human.seekBotIndex));
+    if(human.seekBotIndex >= 0) {
+      human.draw((SeekBot) robots.get(human.seekBotIndex));
+    } else {
+      human.draw();
+    }
   }
 }
 
@@ -592,6 +596,8 @@ public void detectPlayerFamilyCollision(){
       } else {
         score += 50;
       }
+
+      ((SeekBot)robots.get(human.seekBotIndex)).familyIndex = -1;
       family.remove(human);
     }
   }
@@ -667,6 +673,9 @@ public void playerRobotCollision(float playerX, float playerY, int playerSize){
 
     if(playerX - playerSize/2 < robotX + robotSize && playerX + playerSize/2 > robotX) {
       if(playerY - playerSize/2 < robotY + robotSize && playerY + playerSize/2 > robotY) {
+        if(robot instanceof SeekBot) {
+          family.get(((SeekBot)robot).familyIndex).seekBotIndex = -1;
+        }
         robots.remove(robot);
         if(!invinciblePowerUp) {
           player.lives--;
@@ -855,7 +864,11 @@ public void drawRobots(){
       robot.draw(player);
     }
     if(robot instanceof SeekBot) {
-      robot.draw(family.get(((SeekBot)robot).familyIndex));
+      if(((SeekBot)robot).familyIndex != -1) {
+        robot.draw(family.get(((SeekBot)robot).familyIndex));
+      } else {
+        robot.draw();
+      }
     }
     robot.draw();
   }
@@ -1130,8 +1143,11 @@ class BombPowerUp extends PowerUp {
   }
 
   public void display(){
-    fill(111,111,111);
+    fill(0, 153, 153);
     circle(this.position.x, this.position.y, this.size);
+    fill(0);
+    textAlign(CENTER, CENTER);
+    text('B', position.x, position.y);
   }
 
   public void draw(){
@@ -1181,7 +1197,7 @@ class Bullet {
 
   public void display(){
     if(enemy) {
-      fill(255,0,0);
+      fill(255, 0, 255);
     } else {
       fill(0,255,255);
     }
@@ -1318,8 +1334,12 @@ class Human {
   }
 
 
-  public void update(SeekBot seekBot){
+  public void update(SeekBot seekBot) {
     flee(seekBot);
+  }
+
+  public void update(){
+
   }
 
   public void display(){
@@ -1332,6 +1352,11 @@ class Human {
 
   public void draw(SeekBot seekBot) {
     update(seekBot);
+    display();
+  }
+
+  public void draw() {
+    update();
     display();
   }
   public boolean detectBottomEdge() {
@@ -1394,8 +1419,11 @@ class InvinciblePowerUp extends PowerUp {
   }
 
   public void display() {
-    fill(222,222,222);
+    fill(0, 153, 153);
     circle(this.position.x, this.position.y, this.size);
+    fill(0);
+    textAlign(CENTER, CENTER);
+    text('I', position.x, position.y);
   }
 
   public void draw() {
@@ -1494,7 +1522,7 @@ class MeleeBot extends Robot {
   }
 
   public void display() {
-    fill(255, 255, 0);
+    fill(179, 0, 179);
     square(this.position.x, this.position.y, this.size);
   }
 
@@ -1649,7 +1677,7 @@ class Obstacle {
   public void display(){
     pushStyle();
     rectMode(CENTER);
-    fill( 0,0,255);
+    fill( 26, 0, 0);
 
     pushMatrix();
     translate(position.x, position.y);
@@ -1776,7 +1804,7 @@ class RangedBot extends Robot {
   }
 
   public void display() {
-    fill( 0, 255, 0);
+    fill( 255, 0, 255);
     square(this.position.x, this.position.y, this.size);
   }
 
@@ -1966,17 +1994,26 @@ class SeekBot extends Robot {
     this.familyIndex = familyIndex;
   }
 
-  public void update(Human human){
+  public void update(Human human) {
     pursue(human);
   }
 
+  public void update() {
+
+  }
+
   public void display() {
-    fill(255, 0, 255);
+    fill(102, 0, 102);
     square(this.position.x, this.position.y, this.size);
   }
 
   public void draw(Human human){
     update(human);
+    display();
+  }
+
+  public void draw() {
+    update();
     display();
   }
 

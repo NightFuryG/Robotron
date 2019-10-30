@@ -122,8 +122,12 @@ class Human {
   }
 
 
-  void update(SeekBot seekBot){
+  void update(SeekBot seekBot) {
     flee(seekBot);
+  }
+
+  void update(){
+
   }
 
   void display(){
@@ -136,6 +140,11 @@ class Human {
 
   void draw(SeekBot seekBot) {
     update(seekBot);
+    display();
+  }
+
+  void draw() {
+    update();
     display();
   }
   boolean detectBottomEdge() {

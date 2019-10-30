@@ -22,7 +22,7 @@ class Obstacle {
   void display(){
     pushStyle();
     rectMode(CENTER);
-    fill( 0,0,255);
+    fill( 26, 0, 0);
 
     pushMatrix();
     translate(position.x, position.y);

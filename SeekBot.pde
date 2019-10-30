@@ -19,17 +19,26 @@ class SeekBot extends Robot {
     this.familyIndex = familyIndex;
   }
 
-  void update(Human human){
+  void update(Human human) {
     pursue(human);
   }
 
+  void update() {
+
+  }
+
   void display() {
-    fill(255, 0, 255);
+    fill(102, 0, 102);
     square(this.position.x, this.position.y, this.size);
   }
 
   void draw(Human human){
     update(human);
+    display();
+  }
+
+  void draw() {
+    update();
     display();
   }
 

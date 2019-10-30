@@ -41,7 +41,7 @@ class Bullet {
 
   void display(){
     if(enemy) {
-      fill(255,0,0);
+      fill(255, 0, 255);
     } else {
       fill(0,255,255);
     }

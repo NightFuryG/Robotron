@@ -10,7 +10,7 @@ class RangedBot extends Robot {
   }
 
   void display() {
-    fill( 0, 255, 0);
+    fill( 255, 0, 255);
     square(this.position.x, this.position.y, this.size);
   }
 

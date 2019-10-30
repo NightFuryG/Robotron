@@ -434,7 +434,11 @@ void drawBullets() {
 
 void drawFamily() {
   for(Human human : family) {
-    human.draw((SeekBot) robots.get(human.seekBotIndex));
+    if(human.seekBotIndex >= 0) {
+      human.draw((SeekBot) robots.get(human.seekBotIndex));
+    } else {
+      human.draw();
+    }
   }
 }
 
@@ -576,6 +580,8 @@ void detectPlayerFamilyCollision(){
       } else {
         score += 50;
       }
+
+      ((SeekBot)robots.get(human.seekBotIndex)).familyIndex = -1;
       family.remove(human);
     }
   }
@@ -651,6 +657,9 @@ void playerRobotCollision(float playerX, float playerY, int playerSize){
 
     if(playerX - playerSize/2 < robotX + robotSize && playerX + playerSize/2 > robotX) {
       if(playerY - playerSize/2 < robotY + robotSize && playerY + playerSize/2 > robotY) {
+        if(robot instanceof SeekBot) {
+          family.get(((SeekBot)robot).familyIndex).seekBotIndex = -1;
+        }
         robots.remove(robot);
         if(!invinciblePowerUp) {
           player.lives--;
@@ -839,7 +848,11 @@ void drawRobots(){
       robot.draw(player);
     }
     if(robot instanceof SeekBot) {
-      robot.draw(family.get(((SeekBot)robot).familyIndex));
+      if(((SeekBot)robot).familyIndex != -1) {
+        robot.draw(family.get(((SeekBot)robot).familyIndex));
+      } else {
+        robot.draw();
+      }
     }
     robot.draw();
   }

@@ -1,7 +1,7 @@
 class Robot {
   final int ROBOT_SIZE = 80;
 
-  final float ORIENTATION_INCREMENT = PI/16;
+  final float ORIENTATION_INCREMENT = PI/32;
   final float ROBOT_SPEED = displayWidth/1000;
 
   PVector position;
@@ -53,31 +53,42 @@ class Robot {
     if(!detectNotBlack(getLeftColor()) || detectLeftEdge()) {
       if (this.velocity.x < 0) {
         orientation += PI/2;
+        this.velocity.x = -velocity.x;
       } else if (this.velocity.x >= 0) {
         orientation += PI/2;
+        velocity.x = cornerBounce;
       }
     }
     if(!detectNotBlack(getRightColor()) || detectRightEdge()){
       if (this.velocity.x > 0) {
         orientation += PI/2;
+        velocity.x = - velocity.x;
       } else if (this.velocity.x <= 0) {
         orientation += PI/2;
+        velocity.x = -cornerBounce;
       }
     }
     if(!detectNotBlack(getUpColor()) || detectTopEdge()){
       if (this.velocity.y < 0) {
         orientation += PI/2;
+        velocity.y = - velocity.y;
       } else if (this.velocity.y >= 0) {
         orientation += PI/2;
+        velocity.y = cornerBounce;
       }
     }
     if(!detectNotBlack(getDownColor()) || detectBottomEdge()){
       if (this.velocity.y > 0) {
         orientation += PI/2;
+        velocity.y = - velocity.y;
       } else if (this.velocity.y <= 0) {
         orientation += PI/2;
+        velocity.y = - cornerBounce;
       }
     }
+
+    //top leftX
+
 }
 
 

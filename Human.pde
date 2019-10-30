@@ -1,11 +1,11 @@
 class Human {
 
   final int HUMAN_SIZE = displayWidth/80;
-  final float MAX_SPEED = displayWidth/2000;
+  final float MAX_SPEED = displayWidth/1000;
   final float MAX_ACCEL = 0.1f;
   final float MAX_ROTATION = PI/4;
   final float ORIENTATION_INCREMENT = PI/8 ;
-  final int SEP_THRESHOLD = displayWidth/30;
+  final int SEP_THRESHOLD = displayWidth/20;
 
   PVector position;
   PVector velocity;
@@ -16,6 +16,7 @@ class Human {
   int humanSize;
   int seekBotIndex;
   char member;
+  boolean flee;
 
   Human(float x, float y, char member, int seekBotIndex){
     this.position = new PVector(x, y);
@@ -26,9 +27,11 @@ class Human {
     this.acceleration = new PVector(0,0);
     this.direction = new PVector(0,0);
     this.seekBotIndex = seekBotIndex;
+    this.flee = true;
   }
 
   void integrate(PVector linear) {
+    velocity.limit(MAX_SPEED);
     position.add(velocity);
 
     float cornerBounce = MAX_SPEED;

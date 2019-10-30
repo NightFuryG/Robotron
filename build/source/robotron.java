@@ -33,6 +33,7 @@ ArrayList<Bullet> bullets;
 ArrayList<Human> family;
 ArrayList<Obstacle> obstacles;
 ArrayList<Robot> robots;
+ArrayList<SeekBot> seekBots;
 ArrayList<PVector> spawns;
 ArrayList<PowerUp> powerUps;
 ArrayList<MeleeBot> meleeBots;
@@ -71,11 +72,13 @@ public void setup () {
   spawns = new ArrayList<PVector>();
   powerUps = new ArrayList<PowerUp>();
   meleeBots = new ArrayList<MeleeBot>();
+  seekBots = new ArrayList<SeekBot>();
   spawnFamilyAndSeekBots();
   spawnObstacles();
   spawnRobots();
   spawnPowerUps();
   checkRooms();
+  seekbotandfamily();
 }
 
 public void draw () {
@@ -449,11 +452,15 @@ public void drawBullets() {
 }
 
 public void drawFamily() {
-  for(Human human : family) {
-    if(human.seekBotIndex >= 0) {
-      human.draw((SeekBot) robots.get(human.seekBotIndex));
+  for(int i = 0; i < family.size(); i++) {
+    if(family.get(i).flee) {
+      for(int j = 0; j < seekBots.size(); j++){
+        if(family.get(i).member == seekBots.get(j).member) {
+          family.get(i).draw(seekBots.get(j));
+        }
+      }
     } else {
-      human.draw();
+      family.get(i).draw();
     }
   }
 }
@@ -490,10 +497,10 @@ public void spawnFamilyAndSeekBots(){
         spawnFamilyMember(humanCount, randomPointInRoom, humanCount);
 
         if(checkCentralRoomSpawn(randomPointInRoom, randomRoomIndex)) {
-          robots.add(spawnSeekBot(seekBotSpawnPoint, randomRoomIndex, humanCount));
+          seekBots.add(spawnSeekBot(seekBotSpawnPoint, randomRoomIndex, humanCount));
           spawns.add(seekBotSpawnPoint);
         } else {
-          robots.add(spawnDefaultSeekBot(randomRoomIndex, humanCount));
+          seekBots.add(spawnDefaultSeekBot(randomRoomIndex, humanCount));
         }
         humanCount++;
         selectedRooms.add(randomRoomIndex);
@@ -507,7 +514,21 @@ public void spawnFamilyAndSeekBots(){
 }
 
 public SeekBot spawnSeekBot(PVector seekBotSpawnPoint, int roomIndex, int humanCount) {
-  return new SeekBot(seekBotSpawnPoint.x - size/2, seekBotSpawnPoint.y - size/2, roomIndex, humanCount);
+  SeekBot seekBot = new SeekBot(seekBotSpawnPoint.x - size/2, seekBotSpawnPoint.y - size/2, roomIndex, humanCount, 'Y');
+  switch(humanCount) {
+    case 0:
+      seekBot = new SeekBot(seekBotSpawnPoint.x - size/2, seekBotSpawnPoint.y - size/2, roomIndex, humanCount, 'F');
+      break;
+    case 1:
+      seekBot = new SeekBot(seekBotSpawnPoint.x - size/2, seekBotSpawnPoint.y - size/2, roomIndex, humanCount, 'M');
+      break;
+    case 2:
+      seekBot = new SeekBot(seekBotSpawnPoint.x - size/2, seekBotSpawnPoint.y - size/2, roomIndex, humanCount, 'C');
+      break;
+    default:
+      break;
+  }
+  return seekBot;
 }
 
 public SeekBot spawnDefaultSeekBot(int randomRoomIndex, int humanCount){
@@ -597,7 +618,11 @@ public void detectPlayerFamilyCollision(){
         score += 50;
       }
 
-      ((SeekBot)robots.get(human.seekBotIndex)).familyIndex = -1;
+      for(SeekBot seekBot : seekBots) {
+        if(seekBot.member == human.member) {
+          seekBot.pursue = false;
+        }
+      }
       family.remove(human);
     }
   }
@@ -636,6 +661,9 @@ public void detectEnemyCollision() {
   if(robots.size() > 0) {
     playerRobotCollision(playerX, playerY, playerRadius);
   }
+  if(seekBots.size() > 0) {
+    playerSeekBotCollision(playerX, playerY, playerRadius);
+  }
 }
 
 public void playerObstacleCollision(float playerX, float playerY, int playerSize){
@@ -673,9 +701,7 @@ public void playerRobotCollision(float playerX, float playerY, int playerSize){
 
     if(playerX - playerSize/2 < robotX + robotSize && playerX + playerSize/2 > robotX) {
       if(playerY - playerSize/2 < robotY + robotSize && playerY + playerSize/2 > robotY) {
-        if(robot instanceof SeekBot) {
-          family.get(((SeekBot)robot).familyIndex).seekBotIndex = -1;
-        }
+
         robots.remove(robot);
         if(!invinciblePowerUp) {
           player.lives--;
@@ -685,6 +711,30 @@ public void playerRobotCollision(float playerX, float playerY, int playerSize){
     }
   }
 }
+
+public void playerSeekBotCollision(float playerX, float playerY, int playerSize){
+  for(SeekBot robot : new ArrayList<SeekBot>(seekBots)) {
+    float robotX = robot.position.x;
+    float robotY = robot.position.y;
+    int robotSize = robot.size;
+
+    if(playerX - playerSize/2 < robotX + robotSize && playerX + playerSize/2 > robotX) {
+      if(playerY - playerSize/2 < robotY + robotSize && playerY + playerSize/2 > robotY) {
+        for(int i = 0; i < family.size(); i ++) {
+          if(robot.member == family.get(i).member) {
+            family.get(i).flee = false;
+          }
+        }
+        seekBots.remove(robot);
+        if(!invinciblePowerUp) {
+          player.lives--;
+          resetPosition();
+        }
+      }
+    }
+  }
+}
+
 
 public void detectBulletCollision(){
   for(Bullet bullet : new ArrayList<Bullet>(bullets)){
@@ -699,14 +749,6 @@ public void detectBulletCollision(){
 
     if(robots.size() > 0) {
       bulletRobotCollision(bullet);
-    }
-
-    if(family.size() > 0) {
-      bulletHumanCollision(bullet);
-    }
-
-    if(powerUps.size() > 0) {
-      bulletPowerUpCollision(bullet);
     }
   }
 }
@@ -829,7 +871,6 @@ public void spawnRobots() {
           robotCount++;
         } else {
           robots.add(new RangedBot(randomPointInRoom.x, randomPointInRoom.y, randomRoomIndex));
-          System.out.println("HI");
           spawns.add(randomPointInRoom);
           robotCount++;
         }
@@ -863,14 +904,21 @@ public void drawRobots(){
     if(robot instanceof MeleeBot) {
       robot.draw(player);
     }
-    if(robot instanceof SeekBot) {
-      if(((SeekBot)robot).familyIndex != -1) {
-        robot.draw(family.get(((SeekBot)robot).familyIndex));
-      } else {
-        robot.draw();
-      }
-    }
     robot.draw();
+  }
+
+  for(int i = 0; i < seekBots.size(); i++) {
+    if(seekBots.get(i).pursue == true) {
+      System.out.println(true);
+      for(int j = 0; j < family.size(); j++){
+        if(seekBots.get(i).member == family.get(j).member) {
+          seekBots.get(i).draw(family.get(j));
+        }
+      }
+    } else {
+      System.out.println(false);
+      seekBots.get(i).draw();
+    }
   }
 }
 
@@ -916,6 +964,17 @@ public void checkRooms() {
     if(room.position.y + room.height > displayHeight) {
       System.out.println("bad y");
     }
+  }
+}
+
+public void seekbotandfamily(){
+  for(Human human : family) {
+    System.out.println(human.seekBotIndex);
+  }
+  System.out.println();
+
+  for(SeekBot seekBot : seekBots) {
+    System.out.println(seekBot.familyIndex);
   }
 }
 class BSPNode {
@@ -1213,11 +1272,11 @@ class Bullet {
 class Human {
 
   final int HUMAN_SIZE = displayWidth/80;
-  final float MAX_SPEED = displayWidth/2000;
+  final float MAX_SPEED = displayWidth/1000;
   final float MAX_ACCEL = 0.1f;
   final float MAX_ROTATION = PI/4;
   final float ORIENTATION_INCREMENT = PI/8 ;
-  final int SEP_THRESHOLD = displayWidth/30;
+  final int SEP_THRESHOLD = displayWidth/20;
 
   PVector position;
   PVector velocity;
@@ -1228,6 +1287,7 @@ class Human {
   int humanSize;
   int seekBotIndex;
   char member;
+  boolean flee;
 
   Human(float x, float y, char member, int seekBotIndex){
     this.position = new PVector(x, y);
@@ -1238,9 +1298,11 @@ class Human {
     this.acceleration = new PVector(0,0);
     this.direction = new PVector(0,0);
     this.seekBotIndex = seekBotIndex;
+    this.flee = true;
   }
 
   public void integrate(PVector linear) {
+    velocity.limit(MAX_SPEED);
     position.add(velocity);
 
     float cornerBounce = MAX_SPEED;
@@ -1816,7 +1878,7 @@ class RangedBot extends Robot {
 class Robot {
   final int ROBOT_SIZE = 80;
 
-  final float ORIENTATION_INCREMENT = PI/16;
+  final float ORIENTATION_INCREMENT = PI/32;
   final float ROBOT_SPEED = displayWidth/1000;
 
   PVector position;
@@ -1868,31 +1930,42 @@ class Robot {
     if(!detectNotBlack(getLeftColor()) || detectLeftEdge()) {
       if (this.velocity.x < 0) {
         orientation += PI/2;
+        this.velocity.x = -velocity.x;
       } else if (this.velocity.x >= 0) {
         orientation += PI/2;
+        velocity.x = cornerBounce;
       }
     }
     if(!detectNotBlack(getRightColor()) || detectRightEdge()){
       if (this.velocity.x > 0) {
         orientation += PI/2;
+        velocity.x = - velocity.x;
       } else if (this.velocity.x <= 0) {
         orientation += PI/2;
+        velocity.x = -cornerBounce;
       }
     }
     if(!detectNotBlack(getUpColor()) || detectTopEdge()){
       if (this.velocity.y < 0) {
         orientation += PI/2;
+        velocity.y = - velocity.y;
       } else if (this.velocity.y >= 0) {
         orientation += PI/2;
+        velocity.y = cornerBounce;
       }
     }
     if(!detectNotBlack(getDownColor()) || detectBottomEdge()){
       if (this.velocity.y > 0) {
         orientation += PI/2;
+        velocity.y = - velocity.y;
       } else if (this.velocity.y <= 0) {
         orientation += PI/2;
+        velocity.y = - cornerBounce;
       }
     }
+
+    //top leftX
+
 }
 
 
@@ -1975,8 +2048,8 @@ class Room {
 }
 class SeekBot extends Robot {
 
-  final float MAX_SPEED = displayWidth/2500;
-  final float MAX_ACCEL = 0.01f;
+  final float MAX_SPEED = displayWidth/1500;
+  final float MAX_ACCEL = 0.1f;
   final float MAX_ROTATION = PI/4;
 
   PVector linear;
@@ -1984,14 +2057,18 @@ class SeekBot extends Robot {
   PVector direction;
   PVector pursueTarget;
   int familyIndex;
+  char member;
+  boolean pursue;
 
-  SeekBot (float x, float  y, int roomIndex, int familyIndex) {
+  SeekBot (float x, float  y, int roomIndex, int familyIndex, char member) {
     super(x, y, roomIndex);
     this.rotation = 0;
     this.linear = new PVector(0,0);
     this.direction = new PVector(0,0);
     this.pursueTarget = new PVector(0,0);
     this.familyIndex = familyIndex;
+    this.pursue = true;
+    this.member = member;
   }
 
   public void update(Human human) {
@@ -2010,6 +2087,7 @@ class SeekBot extends Robot {
   public void draw(Human human){
     update(human);
     display();
+    System.out.println("reached");
   }
 
   public void draw() {
@@ -2032,7 +2110,7 @@ class SeekBot extends Robot {
     Room room = map.rooms.get(this.roomIndex);
     int radius;
 
-    integrate(human.position, 0);
+    integrate(pursueTarget, 0);
   }
 
 

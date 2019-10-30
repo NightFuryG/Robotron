@@ -1,7 +1,7 @@
 class SeekBot extends Robot {
 
-  final float MAX_SPEED = displayWidth/2500;
-  final float MAX_ACCEL = 0.01f;
+  final float MAX_SPEED = displayWidth/1500;
+  final float MAX_ACCEL = 0.1f;
   final float MAX_ROTATION = PI/4;
 
   PVector linear;
@@ -9,14 +9,18 @@ class SeekBot extends Robot {
   PVector direction;
   PVector pursueTarget;
   int familyIndex;
+  char member;
+  boolean pursue;
 
-  SeekBot (float x, float  y, int roomIndex, int familyIndex) {
+  SeekBot (float x, float  y, int roomIndex, int familyIndex, char member) {
     super(x, y, roomIndex);
     this.rotation = 0;
     this.linear = new PVector(0,0);
     this.direction = new PVector(0,0);
     this.pursueTarget = new PVector(0,0);
     this.familyIndex = familyIndex;
+    this.pursue = true;
+    this.member = member;
   }
 
   void update(Human human) {
@@ -35,6 +39,7 @@ class SeekBot extends Robot {
   void draw(Human human){
     update(human);
     display();
+    System.out.println("reached");
   }
 
   void draw() {
@@ -57,7 +62,7 @@ class SeekBot extends Robot {
     Room room = map.rooms.get(this.roomIndex);
     int radius;
 
-    integrate(human.position, 0);
+    integrate(pursueTarget, 0);
   }
 
 

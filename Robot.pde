@@ -22,13 +22,19 @@ class Robot {
 
   }
 
+  void draw(Player player) {
+
+  }
+
+  void draw(Human human) {
+
+  }
+
   void wander(){
 
     velocity.x = cos(orientation);
     velocity.y = sin(orientation);
     velocity.mult(ROBOT_SPEED);
-
-
 
     position.add(velocity);
 
@@ -39,40 +45,38 @@ class Robot {
     } else if (orientation < - PI) {
       orientation += 2*PI;
     }
-
   }
 
   void ensureRobotInArea() {
-    int cornerBounce = this.size*10;
+    float cornerBounce = 1;
 
     if(!detectNotBlack(getLeftColor()) || detectLeftEdge()) {
       if (this.velocity.x < 0) {
-        orientation += PI;
+        orientation += PI/2;
       } else if (this.velocity.x >= 0) {
-        orientation = PI/2;
+        orientation += PI/2;
       }
     }
     if(!detectNotBlack(getRightColor()) || detectRightEdge()){
       if (this.velocity.x > 0) {
-        orientation -= PI;
+        orientation += PI/2;
       } else if (this.velocity.x <= 0) {
-        orientation = -PI/2;
+        orientation += PI/2;
       }
     }
     if(!detectNotBlack(getUpColor()) || detectTopEdge()){
       if (this.velocity.y < 0) {
-        orientation -= PI;
+        orientation += PI/2;
       } else if (this.velocity.y >= 0) {
-        orientation = PI;
+        orientation += PI/2;
       }
     }
     if(!detectNotBlack(getDownColor()) || detectBottomEdge()){
       if (this.velocity.y > 0) {
-        orientation += PI;
+        orientation += PI/2;
       } else if (this.velocity.y <= 0) {
-        orientation = 2*PI;
+        orientation += PI/2;
       }
-
     }
 }
 
@@ -114,7 +118,7 @@ class Robot {
 
      color getUpColor() {
       int upX = (int) this.position.x;
-      int upY = (int) this.position.y;
+      int upY = (int) this.position.y ;
       color upColor = get(upX, upY);
       return upColor;
     }

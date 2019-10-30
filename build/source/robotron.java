@@ -35,6 +35,7 @@ ArrayList<Obstacle> obstacles;
 ArrayList<Robot> robots;
 ArrayList<PVector> spawns;
 ArrayList<PowerUp> powerUps;
+ArrayList<MeleeBot> meleeBots;
 int score;
 int size;
 int wave;
@@ -69,7 +70,7 @@ public void setup () {
   robots = new ArrayList<Robot>();
   spawns = new ArrayList<PVector>();
   powerUps = new ArrayList<PowerUp>();
-
+  meleeBots = new ArrayList<MeleeBot>();
   spawnFamilyAndSeekBots();
   spawnObstacles();
   spawnRobots();
@@ -106,6 +107,7 @@ public void draw () {
         updatePlayerRoom();
         updateRobotRoom();
         removeMissedBullets();
+        meleeBotPursue();
         rangedBotFire();
         player.draw();
         drawBullets();
@@ -148,6 +150,7 @@ public void reset(){
   obstacles.clear();
   robots.clear();
   spawns.clear();
+  powerUps.clear();
   player = spawnPlayer();
   spawnFamilyAndSeekBots();
   spawnObstacles();
@@ -166,7 +169,18 @@ public void newGame(){
   wave = 0;
   reset();
   alive = true;
+}
 
+public void meleeBotPursue() {
+  for(Robot robot : robots) {
+    if(robot instanceof MeleeBot) {
+      if(robot.roomIndex == player.roomIndex) {
+          ((MeleeBot)robot).pursue = true;
+      } else {
+        ((MeleeBot)robot).pursue = false;
+        }
+    }
+  }
 }
 
 public boolean checkNotDead() {
@@ -226,8 +240,6 @@ public void activateBomb() {
   bombPowerUp = false;
 }
 
-
-
 public Player spawnPlayer() {
   Room firstRoom = map.rooms.get(0);
   int startX = (int) firstRoom.position.x + firstRoom.width/2;
@@ -272,8 +284,6 @@ public void updateRobotRoom() {
     }
   }
 }
-
-
 
 public void keyPressed() {
     if(key == 'w') {
@@ -379,8 +389,6 @@ public void ensurePlayerInArea(){
   }
 }
 
-
-
 public boolean checkBottomEdge() {
   int downY= (int) player.position.y + player.playerSize/2;
   return downY >= displayHeight;
@@ -399,7 +407,6 @@ public boolean checkRightEdge(){
 public boolean checkTopEdge(){
   int topY = (int) player.position.y - player.playerSize/2;
   return topY <= 0;
-
 }
 
 public int getLeftColor() {
@@ -443,7 +450,7 @@ public void drawBullets() {
 
 public void drawFamily() {
   for(Human human : family) {
-    human.draw();
+    human.draw((SeekBot) robots.get(human.seekBotIndex));
   }
 }
 
@@ -476,13 +483,13 @@ public void spawnFamilyAndSeekBots(){
       PVector seekBotSpawnPoint = inverseRandomPointInRoom(randomRoomIndex, randomPointInRoom);
 
       if(checkSpawnLocation(randomPointInRoom) && checkSpawnLocation(seekBotSpawnPoint)) {
-        spawnFamilyMember(humanCount, randomPointInRoom);
+        spawnFamilyMember(humanCount, randomPointInRoom, humanCount);
 
         if(checkCentralRoomSpawn(randomPointInRoom, randomRoomIndex)) {
-          robots.add(spawnSeekBot(seekBotSpawnPoint, randomRoomIndex));
+          robots.add(spawnSeekBot(seekBotSpawnPoint, randomRoomIndex, humanCount));
           spawns.add(seekBotSpawnPoint);
         } else {
-          robots.add(spawnDefaultSeekBot(randomRoomIndex));
+          robots.add(spawnDefaultSeekBot(randomRoomIndex, humanCount));
         }
         humanCount++;
         selectedRooms.add(randomRoomIndex);
@@ -495,11 +502,11 @@ public void spawnFamilyAndSeekBots(){
   }
 }
 
-public SeekBot spawnSeekBot(PVector seekBotSpawnPoint, int roomIndex) {
-  return new SeekBot(seekBotSpawnPoint.x - size/2, seekBotSpawnPoint.y - size/2, roomIndex);
+public SeekBot spawnSeekBot(PVector seekBotSpawnPoint, int roomIndex, int humanCount) {
+  return new SeekBot(seekBotSpawnPoint.x - size/2, seekBotSpawnPoint.y - size/2, roomIndex, humanCount);
 }
 
-public SeekBot spawnDefaultSeekBot(int randomRoomIndex){
+public SeekBot spawnDefaultSeekBot(int randomRoomIndex, int humanCount){
   int spawnRadius = size;
   Room room = map.rooms.get(randomRoomIndex);
   float roomX = room.position.x + spawnRadius;
@@ -507,8 +514,7 @@ public SeekBot spawnDefaultSeekBot(int randomRoomIndex){
   PVector spawnLocation = new PVector(roomX, roomY);
   spawns.add(spawnLocation);
 
-  return spawnSeekBot(spawnLocation, randomRoomIndex);
-
+  return spawnSeekBot(spawnLocation, randomRoomIndex, humanCount);
 }
 
 public boolean checkCentralRoomSpawn(PVector spawnLocation, int randomRoomIndex) {
@@ -523,9 +529,6 @@ public boolean checkCentralRoomSpawn(PVector spawnLocation, int randomRoomIndex)
   }
   return true;
 }
-
-
-
 
 public boolean checkSpawnLocation(PVector spawnLocation) {
   float spawnRadius = displayWidth/(HUMAN_RADIUS_PROPORTION/2);
@@ -544,7 +547,6 @@ public boolean checkSpawnLocation(PVector spawnLocation) {
   return true;
 }
 
-
 public PVector inverseRandomPointInRoom(int index, PVector familyPosition) {
 
   Room room = map.rooms.get(index);
@@ -557,23 +559,22 @@ public PVector inverseRandomPointInRoom(int index, PVector familyPosition) {
   return seekBotSpawnPosition;
 }
 
-public void spawnFamilyMember(int i, PVector randomPointInRoom){
+public void spawnFamilyMember(int i, PVector randomPointInRoom, int humanCount){
     switch(i) {
       case 0:
-        family.add(new Human(randomPointInRoom.x, randomPointInRoom.y, 'F'));
+        family.add(new Human(randomPointInRoom.x, randomPointInRoom.y, 'F', humanCount));
         break;
       case 1:
-        family.add(new Human(randomPointInRoom.x, randomPointInRoom.y, 'M'));
+        family.add(new Human(randomPointInRoom.x, randomPointInRoom.y, 'M', humanCount));
         break;
       case 2:
-        family.add(new Human(randomPointInRoom.x, randomPointInRoom.y, 'C'));
+        family.add(new Human(randomPointInRoom.x, randomPointInRoom.y, 'C', humanCount));
         break;
       default:
         break;
     }
 }
 
-//ADDSCORE
 public void detectPlayerFamilyCollision(){
   float playerX = player.position.x;
   float playerY = player.position.y;
@@ -642,11 +643,20 @@ public void playerObstacleCollision(float playerX, float playerY, int playerSize
         obstacles.remove(obstacle);
         if(!invinciblePowerUp) {
           player.lives--;
+          resetPosition();
         }
 
       }
     }
   }
+}
+
+public void resetPosition(){
+    Room spawnRoom = map.rooms.get(0);
+    player.position.x = spawnRoom.position.x + spawnRoom.width/2;
+    player.position.y = spawnRoom.position.y + spawnRoom.height/2;
+    player.velocity.x = 0;
+    player.velocity.y = 0;
 }
 
 public void playerRobotCollision(float playerX, float playerY, int playerSize){
@@ -660,6 +670,7 @@ public void playerRobotCollision(float playerX, float playerY, int playerSize){
         robots.remove(robot);
         if(!invinciblePowerUp) {
           player.lives--;
+          resetPosition();
         }
       }
     }
@@ -668,6 +679,10 @@ public void playerRobotCollision(float playerX, float playerY, int playerSize){
 
 public void detectBulletCollision(){
   for(Bullet bullet : new ArrayList<Bullet>(bullets)){
+
+    if(bullet.enemy) {
+      bulletPlayerCollision(bullet);
+    }
 
     if(obstacles.size() > 0) {
       bulletObstacleCollision(bullet);
@@ -684,6 +699,20 @@ public void detectBulletCollision(){
     if(powerUps.size() > 0) {
       bulletPowerUpCollision(bullet);
     }
+  }
+}
+
+public void bulletPlayerCollision(Bullet bullet) {
+  float bulletX = bullet.position.x;
+  float bulletY = bullet.position.y;
+  float playerX = player.position.x;
+  float playerY = player.position.y;
+  float playerSize = player.playerSize;
+
+  if(dist(bulletX, bulletY, playerX, playerY) < playerSize/2) {
+    player.lives--;
+    resetPosition();
+    bullets.remove(bullet);
   }
 }
 
@@ -736,7 +765,6 @@ public void bulletObstacleCollision(Bullet bullet) {
       }
     }
   }
-
 }
 
 public void bulletRobotCollision(Bullet bullet) {
@@ -786,7 +814,8 @@ public void spawnRobots() {
       PVector randomPointInRoom = randomPointInRoom(randomRoomIndex);
       if(checkSpawnLocation(randomPointInRoom)) {
         if(robotCount % 2 == 1) {
-          robots.add(new MeleeBot(randomPointInRoom.x, randomPointInRoom.y, randomRoomIndex));
+          MeleeBot meleeBot = new MeleeBot(randomPointInRoom.x, randomPointInRoom.y, randomRoomIndex);
+          robots.add(meleeBot);
           spawns.add(randomPointInRoom);
           robotCount++;
         } else {
@@ -795,8 +824,6 @@ public void spawnRobots() {
           spawns.add(randomPointInRoom);
           robotCount++;
         }
-
-
     }
   }
 }
@@ -824,6 +851,12 @@ public void spawnPowerUps(){
 
 public void drawRobots(){
   for(Robot robot : robots) {
+    if(robot instanceof MeleeBot) {
+      robot.draw(player);
+    }
+    if(robot instanceof SeekBot) {
+      robot.draw(family.get(((SeekBot)robot).familyIndex));
+    }
     robot.draw();
   }
 }
@@ -833,8 +866,6 @@ public void drawPowerUps(){
     powerUp.draw();
   }
 }
-
-
 
 public PVector randomPointInRoom(int randomRoomIndex) {
   int boundarySpace = displayWidth/HUMAN_RADIUS_PROPORTION;
@@ -1166,20 +1197,129 @@ class Bullet {
 class Human {
 
   final int HUMAN_SIZE = displayWidth/80;
+  final float MAX_SPEED = displayWidth/2000;
+  final float MAX_ACCEL = 0.1f;
+  final float MAX_ROTATION = PI/4;
+  final float ORIENTATION_INCREMENT = PI/8 ;
+  final int SEP_THRESHOLD = displayWidth/30;
 
   PVector position;
+  PVector velocity;
+  PVector linear;
+  PVector acceleration;
+  PVector direction;
+  float orientation;
   int humanSize;
+  int seekBotIndex;
   char member;
 
-  Human(float x, float y, char member){
+  Human(float x, float y, char member, int seekBotIndex){
     this.position = new PVector(x, y);
     this.humanSize = HUMAN_SIZE;
     this.member = member;
+    this.velocity = new PVector(0,0);
+    this.orientation = 0;
+    this.acceleration = new PVector(0,0);
+    this.direction = new PVector(0,0);
+    this.seekBotIndex = seekBotIndex;
+  }
+
+  public void integrate(PVector linear) {
+    position.add(velocity);
+
+    float cornerBounce = MAX_SPEED;
+
+    if(!detectNotBlack(getLeftColor()) || detectLeftEdge()) {
+      if (this.velocity.x < 0) {
+        this.velocity.x = -this.velocity.x;
+      } else if (this.velocity.x >= 0) {
+        this.velocity.x = cornerBounce;
+      }
+    }
+    if(!detectNotBlack(getRightColor()) || detectRightEdge()){
+      if (this.velocity.x > 0) {
+        this.velocity.x = -this.velocity.x;
+      } else if (this.velocity.x <= 0) {
+        this.velocity.x = -cornerBounce;
+      }
+    }
+    if(!detectNotBlack(getUpColor()) || detectTopEdge()){
+      if (this.velocity.y < 0) {
+        this.velocity.y = -this.velocity.y;
+      } else if (this.velocity.y >= 0) {
+        this.velocity.y = cornerBounce;
+      }
+    }
+    if(!detectNotBlack(getDownColor()) || detectBottomEdge()){
+      if (this.velocity.y > 0) {
+        orientation += PI;
+        this.velocity.y = -this.velocity.y;
+      } else if (this.velocity.y <= 0) {
+        orientation = 2*PI;
+        this.velocity.y = -cornerBounce;
+      }
+
+    }
+
+
+    if (linear.mag() > MAX_ACCEL) {
+      linear.normalize() ;
+      linear.mult(MAX_ACCEL) ;
+    }
+    velocity.add(linear) ;
+    if (velocity.mag() > MAX_SPEED) {
+      velocity.normalize() ;
+      velocity.mult(MAX_SPEED) ;
+    }
+
+
+    float targetOrientation = atan2(velocity.y, velocity.x) ;
+
+    // Will take a frame extra at the PI boundary
+    if (abs(targetOrientation - orientation) <= ORIENTATION_INCREMENT) {
+      orientation = targetOrientation ;
+      return ;
+    }
+
+    // if it's less than me, then how much if up to PI less, decrease otherwise increase
+    if (targetOrientation < orientation) {
+      if (orientation - targetOrientation < PI) orientation -= ORIENTATION_INCREMENT ;
+      else orientation += ORIENTATION_INCREMENT ;
+    }
+    else {
+     if (targetOrientation - orientation < PI) orientation += ORIENTATION_INCREMENT ;
+     else orientation -= ORIENTATION_INCREMENT ;
+    }
+
+    // Keep in bounds
+    if (orientation > PI) orientation -= 2*PI ;
+    else if (orientation < -PI) orientation += 2*PI ;
+  }
+
+  public void flee(SeekBot seekBot) {
+    acceleration.x = 0;
+    acceleration.y = 0;
+
+    direction.x = this.position.x - seekBot.position.x - seekBot.size/2;
+    direction.y = this.position.y - seekBot.position.y - seekBot.size/2;
+
+    float distance = direction.mag();
+    if(distance < SEP_THRESHOLD) {
+      direction.normalize();
+      direction.mult((MAX_ACCEL * (SEP_THRESHOLD - distance) / SEP_THRESHOLD));
+      acceleration.add(direction);
+    } else {
+      velocity.x = cos(orientation);
+      velocity.y = sin(orientation);
+      velocity.mult(MAX_SPEED);
+      orientation += random(0, ORIENTATION_INCREMENT) - random(0, ORIENTATION_INCREMENT);
+    }
+    integrate(acceleration);
   }
 
 
-  public void update(){
-
+  public void update(SeekBot seekBot){
+    flee(seekBot);
   }
 
   public void display(){
@@ -1190,11 +1330,62 @@ class Human {
     text(member, position.x, position.y);
   }
 
-  public void draw() {
-    update();
+  public void draw(SeekBot seekBot) {
+    update(seekBot);
     display();
   }
+  public boolean detectBottomEdge() {
+   int downY= (int) this.position.y + this.humanSize;
+   return downY >= displayHeight;
+  }
 
+  public boolean detectLeftEdge(){
+   int leftX = (int) this.position.x - this.humanSize;
+   return leftX <= 0;
+  }
+
+  public boolean detectRightEdge(){
+   int rightX = (int) this.position.x + this.humanSize;
+   return rightX >= displayWidth;
+  }
+
+  public boolean detectTopEdge(){
+   int topY = (int) this.position.y - this.humanSize;
+   return topY <= 0;
+
+  }
+
+  public int getLeftColor() {
+   int leftX = (int) this.position.x - this.humanSize;
+   int leftY = (int) this.position.y;
+   int leftColor = get(leftX, leftY);
+   return leftColor;
+  }
+
+  public int getRightColor() {
+   int rightX = (int) this.position.x + this.humanSize;
+   int rightY = (int) this.position.y;
+   int rightColor = get(rightX, rightY);
+   return rightColor;
+  }
+
+  public int getUpColor() {
+   int upX = (int) this.position.x;
+   int upY = (int) this.position.y - this.humanSize;
+   int upColor = get(upX, upY);
+   return upColor;
+  }
+
+  public int getDownColor() {
+   int downX = (int) this.position.x;
+   int downY= (int) this.position.y + this.humanSize;
+   int downColor = get(downX, downY);
+   return downColor;
+  }
+
+  public boolean detectNotBlack(int inColor){
+   return inColor != BLACK;
+  }
 }
 class InvinciblePowerUp extends PowerUp {
 
@@ -1274,13 +1465,32 @@ class Map {
 }
 class MeleeBot extends Robot {
 
+  final float MAX_SPEED = displayWidth/750 ;
+  final float MAX_ACCEL = 0.1f ;
+  final float MAX_ROTATION = PI/4 ;
+
+  boolean pursue;
+  PVector linear;
+  float rotation;
+  PVector direction;
+  PVector pursueTarget;
+
   MeleeBot(float x, float y, int roomIndex) {
     super(x , y, roomIndex);
+    this.pursue = false;
+    this.rotation = 0;
+    this.linear = new PVector(0,0);
+    this.direction = new PVector(0,0);
+    this.pursueTarget = new PVector(0,0);
   }
 
-  public void update() {
+  public void update(Player player) {
     this.ensureRobotInArea();
-    this.wander();
+    if(!pursue) {
+      this.wander();
+    } else {
+      pursue(player);
+    }
   }
 
   public void display() {
@@ -1288,10 +1498,131 @@ class MeleeBot extends Robot {
     square(this.position.x, this.position.y, this.size);
   }
 
-  public void draw(){
-    update();
+  public void draw(Player player){
+    update(player);
     display();
   }
+
+  public void ensureInArea(){
+
+    int cornerBounce = player.playerSize*10;
+
+    if(!checkNotBlack(getLeftColor()) || checkLeftEdge()) {
+      if (this.velocity.x < 0) {
+        this.velocity.x = -this.velocity.x;
+      }
+      else if (this.velocity.x >= 0) {
+        this.velocity.x = cornerBounce;
+      }
+    }
+    if(!checkNotBlack(getRightColor()) || checkRightEdge()){
+      if (this.velocity.x > 0) {
+        this.velocity.x = -this.velocity.x;
+      } else if (this.velocity.x <= 0) {
+          this.velocity.x = -cornerBounce;
+      }
+    }
+    if(!checkNotBlack(getUpColor()) || checkTopEdge()){
+      if (this.velocity.y < 0) {
+        this.velocity.y = -this.velocity.y;
+      } else if (this.velocity.y >= 0) {
+          this.velocity.y = cornerBounce;
+      }
+    }
+    if(!checkNotBlack(getDownColor()) || checkBottomEdge()){
+      if (this.velocity.y > 0) {
+        this.velocity.y = -this.velocity.y;
+      } else if (this.velocity.y <= 0) {
+        this.velocity.y = -cornerBounce;
+      }
+    }
+  }
+
+  public void pursue(Player player) {
+    direction.x = player.position.x + player.playerSize/2 - this.position.x;
+    direction.y = player.position.y + player.playerSize/2 - this.position.y;
+
+    float distance = direction.mag();
+    float speed = this.velocity.mag();
+    float prediction = distance/speed;
+
+    pursueTarget = player.velocity.copy();
+    pursueTarget.mult(prediction);
+    pursueTarget.add(player.position);
+
+    Room room = map.rooms.get(player.roomIndex);
+    int radius;
+
+    if(room.width > height) {
+      radius = room.height/2;
+    } else {
+      radius = room.width/2;
+    }
+
+    if(dist(this.position.x, this.position.y, player.position.x, player.position.y) < radius) {
+      integrate(pursueTarget, 0);
+    } else {
+      integrate(player.position, 0);
+    }
+  }
+
+
+  public void integrate(PVector targetPos, float angular) {
+    this.position.add(this.velocity);
+
+    int cornerBounce = 1;
+
+    if(!checkNotBlack(getLeftColor()) || checkLeftEdge()) {
+      if (this.velocity.x < 0) {
+        this.velocity.x = -this.velocity.x;
+      }
+      else if (this.velocity.x >= 0) {
+        this.velocity.x = cornerBounce;
+      }
+    }
+    if(!checkNotBlack(getRightColor()) || checkRightEdge()){
+      if (this.velocity.x > 0) {
+        this.velocity.x = -this.velocity.x;
+      } else if (this.velocity.x <= 0) {
+          this.velocity.x = -cornerBounce;
+      }
+    }
+    if(!checkNotBlack(getUpColor()) || checkTopEdge()){
+      if (this.velocity.y < 0) {
+        this.velocity.y = -this.velocity.y;
+      } else if (this.velocity.y >= 0) {
+          this.velocity.y = cornerBounce;
+      }
+    }
+    if(!checkNotBlack(getDownColor()) || checkBottomEdge()){
+      if (this.velocity.y > 0) {
+        this.velocity.y = -this.velocity.y;
+      } else if (this.velocity.y <= 0) {
+        this.velocity.y = -cornerBounce;
+      }
+    }
+
+    orientation += rotation ;
+    if (orientation > PI) orientation -= 2*PI ;
+    else if (orientation < -PI) orientation += 2*PI ;
+    linear.x = targetPos.x - position.x ;
+    linear.y = targetPos.y - position.y ;
+
+    linear.normalize() ;
+    linear.mult(MAX_ACCEL) ;
+    velocity.add(linear) ;
+    if (velocity.mag() > MAX_SPEED) {
+      velocity.normalize() ;
+      velocity.mult(MAX_SPEED) ;
+    }
+
+    rotation += angular ;
+    if (rotation > MAX_ROTATION) rotation = MAX_ROTATION ;
+    else if (rotation  < -MAX_ROTATION) rotation = -MAX_ROTATION ;
+  }
+
+
+
 
 }
 class Obstacle {
@@ -1478,13 +1809,19 @@ class Robot {
 
   }
 
+  public void draw(Player player) {
+
+  }
+
+  public void draw(Human human) {
+
+  }
+
   public void wander(){
 
     velocity.x = cos(orientation);
     velocity.y = sin(orientation);
     velocity.mult(ROBOT_SPEED);
-
-
 
     position.add(velocity);
 
@@ -1495,40 +1832,38 @@ class Robot {
     } else if (orientation < - PI) {
       orientation += 2*PI;
     }
-
   }
 
   public void ensureRobotInArea() {
-    int cornerBounce = this.size*10;
+    float cornerBounce = 1;
 
     if(!detectNotBlack(getLeftColor()) || detectLeftEdge()) {
       if (this.velocity.x < 0) {
-        orientation += PI;
+        orientation += PI/2;
       } else if (this.velocity.x >= 0) {
-        orientation = PI/2;
+        orientation += PI/2;
       }
     }
     if(!detectNotBlack(getRightColor()) || detectRightEdge()){
       if (this.velocity.x > 0) {
-        orientation -= PI;
+        orientation += PI/2;
       } else if (this.velocity.x <= 0) {
-        orientation = -PI/2;
+        orientation += PI/2;
       }
     }
     if(!detectNotBlack(getUpColor()) || detectTopEdge()){
       if (this.velocity.y < 0) {
-        orientation -= PI;
+        orientation += PI/2;
       } else if (this.velocity.y >= 0) {
-        orientation = PI;
+        orientation += PI/2;
       }
     }
     if(!detectNotBlack(getDownColor()) || detectBottomEdge()){
       if (this.velocity.y > 0) {
-        orientation += PI;
+        orientation += PI/2;
       } else if (this.velocity.y <= 0) {
-        orientation = 2*PI;
+        orientation += PI/2;
       }
-
     }
 }
 
@@ -1570,7 +1905,7 @@ class Robot {
 
      public int getUpColor() {
       int upX = (int) this.position.x;
-      int upY = (int) this.position.y;
+      int upY = (int) this.position.y ;
       int upColor = get(upX, upY);
       return upColor;
     }
@@ -1612,19 +1947,111 @@ class Room {
 }
 class SeekBot extends Robot {
 
-  SeekBot (float x, float  y, int roomIndex) {
+  final float MAX_SPEED = displayWidth/2500;
+  final float MAX_ACCEL = 0.01f;
+  final float MAX_ROTATION = PI/4;
+
+  PVector linear;
+  float rotation;
+  PVector direction;
+  PVector pursueTarget;
+  int familyIndex;
+
+  SeekBot (float x, float  y, int roomIndex, int familyIndex) {
     super(x, y, roomIndex);
+    this.rotation = 0;
+    this.linear = new PVector(0,0);
+    this.direction = new PVector(0,0);
+    this.pursueTarget = new PVector(0,0);
+    this.familyIndex = familyIndex;
   }
 
-  public void update(){}
+  public void update(Human human){
+    pursue(human);
+  }
 
   public void display() {
     fill(255, 0, 255);
     square(this.position.x, this.position.y, this.size);
   }
 
-  public void draw(){
+  public void draw(Human human){
+    update(human);
     display();
+  }
+
+  public void pursue(Human human) {
+    direction.x = human.position.x + human.humanSize/2 - this.position.x;
+    direction.y = human.position.y + human.humanSize/2 - this.position.y;
+
+    float distance = direction.mag();
+    float speed = this.velocity.mag();
+    float prediction = distance/speed;
+
+    pursueTarget = human.velocity.copy();
+    pursueTarget.mult(prediction);
+    pursueTarget.add(human.position);
+
+    Room room = map.rooms.get(this.roomIndex);
+    int radius;
+
+    integrate(human.position, 0);
+  }
+
+
+  public void integrate(PVector targetPos, float angular) {
+    velocity.limit(0.5f);
+    this.position.add(this.velocity);
+
+    int cornerBounce = 1;
+
+    if(!checkNotBlack(getLeftColor()) || checkLeftEdge()) {
+      if (this.velocity.x < 0) {
+        this.velocity.x = -this.velocity.x;
+      }
+      else if (this.velocity.x >= 0) {
+        this.velocity.x = cornerBounce;
+      }
+    }
+    if(!checkNotBlack(getRightColor()) || checkRightEdge()){
+      if (this.velocity.x > 0) {
+        this.velocity.x = -this.velocity.x;
+      } else if (this.velocity.x <= 0) {
+          this.velocity.x = -cornerBounce;
+      }
+    }
+    if(!checkNotBlack(getUpColor()) || checkTopEdge()){
+      if (this.velocity.y < 0) {
+        this.velocity.y = -this.velocity.y;
+      } else if (this.velocity.y >= 0) {
+          this.velocity.y = cornerBounce;
+      }
+    }
+    if(!checkNotBlack(getDownColor()) || checkBottomEdge()){
+      if (this.velocity.y > 0) {
+        this.velocity.y = -this.velocity.y;
+      } else if (this.velocity.y <= 0) {
+        this.velocity.y = -cornerBounce;
+      }
+    }
+
+    orientation += rotation ;
+    if (orientation > PI) orientation -= 2*PI ;
+    else if (orientation < -PI) orientation += 2*PI ;
+    linear.x = targetPos.x - position.x ;
+    linear.y = targetPos.y - position.y ;
+
+    linear.normalize() ;
+    linear.mult(MAX_ACCEL) ;
+    velocity.add(linear) ;
+    if (velocity.mag() > MAX_SPEED) {
+      velocity.normalize() ;
+      velocity.mult(MAX_SPEED) ;
+    }
+
+    rotation += angular ;
+    if (rotation > MAX_ROTATION) rotation = MAX_ROTATION ;
+    else if (rotation  < -MAX_ROTATION) rotation = -MAX_ROTATION ;
   }
 }
   public void settings() {  fullScreen();  smooth(); }

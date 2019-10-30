@@ -57,7 +57,7 @@ int startTime;
 boolean powerupstarted;
 int invincibleDuration;
 
-Mimim minim;
+Minim minim;
 AudioSample shootSound;
 AudioSample hitSound;
 AudioSample newWaveSound;
@@ -76,7 +76,7 @@ public void setup () {
   newWaveSound = minim.loadSample("data/newWave.mp3");
   gameOverSound = minim.loadFile("data/gameOver.mp3");
   bombSound = minim.loadFile("data/bomb.mp3");
-  invincibleSound = minim.loadFile("data/invincible1.mp3");
+  invincibleSound = minim.loadFile("data/i.mp3");
 
 
   map = new Map();
@@ -757,7 +757,7 @@ public void resetPosition(){
     player.velocity.x = 0;
     player.velocity.y = 0;
     player.lives = lives;
-    hit.trigger();
+    hitSound.trigger();
 }
 
 public void playerRobotCollision(float playerX, float playerY, int playerSize){

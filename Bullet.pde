@@ -10,6 +10,7 @@ class Bullet {
   PVector acceleration;
   boolean enemy;
 
+  //Bullet act as a simple projectile towards a target
   Bullet(float startX, float startY, float endX, float endY, boolean enemy) {
     this.position = new PVector(startX, startY);
     this.destination = new PVector(endX, endY);
@@ -19,18 +20,16 @@ class Bullet {
     this.enemy = enemy;
   }
 
+  //calculate direction of travel
   PVector calculateDirection() {
     return PVector.sub(destination, position);
   }
 
+  //calculate acceleration
   PVector calculateAcceleration() {
     PVector a = this.direction.normalize();
     a = this.direction.mult(0.5);
     return a;
-  }
-
-  void checkWalls() {
-
   }
 
   void update(){
@@ -40,6 +39,7 @@ class Bullet {
   }
 
   void display(){
+    stroke(100);
     if(enemy) {
       fill(255, 0, 255);
     } else {

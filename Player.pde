@@ -5,7 +5,9 @@ class Player {
             PLAYER_LIVES = 3;
 
 
-
+  /*
+    Class representing the superhuman
+  */
   PVector position;
   PVector velocity;
   int playerSize;
@@ -22,6 +24,8 @@ class Player {
     this.roomIndex = 0;
   }
 
+  //move in the direction ordered by the player
+  //has incremental velocity and not instantaneous
   void move(int i) {
     switch (i) {
       case 1:
@@ -41,6 +45,9 @@ class Player {
     }
   }
 
+  //move the player up to its max speed
+  //if key is keyReleased, momentum keeps player moving
+  //draw/friction causes player to stop
   void update() {
     velocity.limit(2*PLAYER_SPEED);
     velocity.x *= 0.90;

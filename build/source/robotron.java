@@ -33,6 +33,7 @@ final int INVINCIBLE_DURATION = 10000;
 final int BASE_MULTIPLIER = 10,
           OBSTACLE_MULTIPLIER = 2;
 
+//intialise Variables
 Map map;
 Player player;
 boolean w, a, s, d;
@@ -57,6 +58,7 @@ int startTime;
 boolean powerupstarted;
 int invincibleDuration;
 
+//sound
 Minim minim;
 AudioSample shootSound;
 AudioSample hitSound;
@@ -107,6 +109,8 @@ public void setup () {
 }
 
 public void draw () {
+
+    //display text top left
     background(0);
     pushStyle();
     textAlign(CENTER);
@@ -117,9 +121,10 @@ public void draw () {
     text("Score: " + score, 5.7f * displayWidth/TEXT_POSITION, displayWidth/(TEXT_POSITION*2));
 
     popStyle();
-
+    //game logic
     if(alive) {
       if(startScreen) {
+        //start screen
         pushStyle();
         textAlign(CENTER);
         textSize(64);
@@ -167,6 +172,7 @@ public void draw () {
     }
 }
 
+//start a new wave
 public void newWave(){
   if(checkWaveEnd()) {
     map = new Map();
@@ -176,6 +182,7 @@ public void newWave(){
   }
 }
 
+//reset Variables
 public void reset(){
   bullets.clear();
   family.clear();
@@ -195,6 +202,7 @@ public void reset(){
   invinciblePowerUp = false;
 }
 
+//start a new game
 public void newGame(){
   map = new Map();
   lives = 5;
@@ -205,6 +213,7 @@ public void newGame(){
   alive = true;
 }
 
+//Melee bot pursue player
 public void meleeBotPursue() {
   for(Robot robot : robots) {
     if(robot instanceof MeleeBot) {
@@ -217,6 +226,7 @@ public void meleeBotPursue() {
   }
 }
 
+//check player is alive
 public boolean checkNotDead() {
   if(lives > 0 || invinciblePowerUp) {
     return true;
@@ -224,6 +234,7 @@ public boolean checkNotDead() {
   return false;
 }
 
+//check if enough points earned for a new life
 public void checkNewLife() {
   if(score >= newLife * NEW_LIFE) {
     player.lives++;
@@ -231,6 +242,7 @@ public void checkNewLife() {
   }
 }
 
+//check if power up active
 public void checkPowerUps() {
   if(bombPowerUp) {
     activateBomb();
@@ -247,6 +259,7 @@ public void checkPowerUps() {
   }
 }
 
+//activate Invincibility
 public void activeInvincible(int startTime) {
 
   if(!(millis() < startTime + INVINCIBLE_DURATION)) {
@@ -257,6 +270,7 @@ public void activeInvincible(int startTime) {
   }
 }
 
+//activate Bomb
 public void activateBomb() {
 
   int countA = 0;
@@ -279,6 +293,7 @@ public void activateBomb() {
   bombPowerUp = false;
 }
 
+//spawn player
 public Player spawnPlayer(int lives) {
   Room firstRoom = map.rooms.get(0);
   int startX = (int) firstRoom.position.x + firstRoom.width/2;
@@ -286,6 +301,7 @@ public Player spawnPlayer(int lives) {
   return new Player(startX, startY, lives);
 }
 
+// determine which room player is in
 public void updatePlayerRoom(){
   float playerX = player.position.x;
   float playerY = player.position.y;
@@ -304,6 +320,7 @@ public void updatePlayerRoom(){
   }
 }
 
+// determine which room robot is in
 public void updateRobotRoom() {
   for(Robot robot : robots) {
     float robotX = robot.position.x;
@@ -324,6 +341,7 @@ public void updateRobotRoom() {
   }
 }
 
+// movement
 public void keyPressed() {
     if(key == 'w') {
       w = true;
@@ -336,6 +354,7 @@ public void keyPressed() {
     }
 }
 
+// movement
 public void keyReleased() {
   if(key == 'w') {
     w = false;
@@ -348,6 +367,7 @@ public void keyReleased() {
   }
 }
 
+// firing
 public void mousePressed(){
   if(!startScreen) {
     if(alive) {
@@ -361,6 +381,7 @@ public void mousePressed(){
   }
 }
 
+// enemy fire
 public void rangedBotFire(){
   for(Robot robot : robots) {
     if(robot instanceof RangedBot) {
@@ -370,12 +391,14 @@ public void rangedBotFire(){
             bullets.add(new Bullet(robot.position.x + robot.size/2, robot.position.y + robot.size/2, player.position.x, player.position.y, true));
           }
         } else {
+            if(frameCount % 10 == 0)
               bullets.add(new Bullet(robot.position.x + robot.size/2, robot.position.y + robot.size/2, player.position.x, player.position.y, true));
           }
       }
     }
 }
 
+// movement
 public void playerMove() {
   if(w) {
     if(checkNotBlack(getUpColor()) && !checkTopEdge()){
@@ -399,6 +422,7 @@ public void playerMove() {
   }
 }
 
+// edge detection
 public void ensurePlayerInArea(){
 
   int cornerBounce = player.playerSize*10;
@@ -434,6 +458,7 @@ public void ensurePlayerInArea(){
   }
 }
 
+// check methods
 public boolean checkBottomEdge() {
   int downY= (int) player.position.y + player.playerSize/2;
   return downY >= displayHeight;
@@ -486,12 +511,14 @@ public boolean checkNotBlack(int inColor){
   return inColor != BLACK;
 }
 
+//draw
 public void drawBullets() {
   for(Bullet bullet : bullets) {
     bullet.draw();
   }
 }
 
+//draw
 public void drawFamily() {
   for(int i = 0; i < family.size(); i++) {
     if(family.get(i).flee) {
@@ -506,10 +533,12 @@ public void drawFamily() {
   }
 }
 
+// check end of wave
 public boolean checkWaveEnd(){
   return ((robots.size() == 0 && seekBots.size() == 0)? true : false);
 }
 
+// remove missed bullets
 public void removeMissedBullets() {
   for(Bullet bullet : new ArrayList<Bullet>(bullets)) {
     int detectedColor = get((int) bullet.position.x, (int) bullet.position.y);
@@ -519,6 +548,7 @@ public void removeMissedBullets() {
   }
 }
 
+//collsion
 public void detectSeekBotFamilyCollision(){
   for(Human human : new ArrayList<Human>(family)) {
     float humanX = human.position.x;
@@ -544,6 +574,7 @@ public void detectSeekBotFamilyCollision(){
   }
 }
 
+//spawn methods
 public void spawnFamilyAndSeekBots(){
 
   int randomRoomIndex;
@@ -608,6 +639,7 @@ public SeekBot spawnDefaultSeekBot(int randomRoomIndex, int humanCount){
   return spawnSeekBot(spawnLocation, randomRoomIndex, humanCount);
 }
 
+// spawn radius
 public boolean checkCentralRoomSpawn(PVector spawnLocation, int randomRoomIndex) {
   float spawnRadius = displayWidth/HUMAN_RADIUS_PROPORTION;
   Room room = map.rooms.get(randomRoomIndex);
@@ -621,6 +653,7 @@ public boolean checkCentralRoomSpawn(PVector spawnLocation, int randomRoomIndex)
   return true;
 }
 
+//spawn check
 public boolean checkSpawnLocation(PVector spawnLocation) {
   float spawnRadius = displayWidth/(HUMAN_RADIUS_PROPORTION/2);
 
@@ -638,6 +671,7 @@ public boolean checkSpawnLocation(PVector spawnLocation) {
   return true;
 }
 
+// get inverse room position
 public PVector inverseRandomPointInRoom(int index, PVector familyPosition) {
 
   Room room = map.rooms.get(index);
@@ -650,6 +684,7 @@ public PVector inverseRandomPointInRoom(int index, PVector familyPosition) {
   return seekBotSpawnPosition;
 }
 
+//spawn family
 public void spawnFamilyMember(int i, PVector randomPointInRoom, int humanCount){
     switch(i) {
       case 0:
@@ -666,6 +701,7 @@ public void spawnFamilyMember(int i, PVector randomPointInRoom, int humanCount){
     }
 }
 
+//collisons
 public void detectPlayerFamilyCollision(){
   float playerX = player.position.x;
   float playerY = player.position.y;
@@ -694,6 +730,7 @@ public void detectPlayerFamilyCollision(){
   }
 }
 
+//collision
 public void detectPlayerPowerUpCollision(){
   float playerX = player.position.x;
   float playerY = player.position.y;
@@ -716,6 +753,7 @@ public void detectPlayerPowerUpCollision(){
   }
 }
 
+//collsion
 public void detectEnemyCollision() {
   float playerX = player.position.x;
   float playerY = player.position.y;
@@ -732,6 +770,7 @@ public void detectEnemyCollision() {
   }
 }
 
+//collision
 public void playerObstacleCollision(float playerX, float playerY, int playerSize){
   for(Obstacle obstacle : new ArrayList<Obstacle>(obstacles)) {
     float obstacleX = obstacle.position.x;
@@ -750,6 +789,7 @@ public void playerObstacleCollision(float playerX, float playerY, int playerSize
   }
 }
 
+//reset player
 public void resetPosition(){
     Room spawnRoom = map.rooms.get(0);
     player.position.x = spawnRoom.position.x + spawnRoom.width/2;
@@ -760,6 +800,7 @@ public void resetPosition(){
     hitSound.trigger();
 }
 
+//collision
 public void playerRobotCollision(float playerX, float playerY, int playerSize){
   for(Robot robot : new ArrayList<Robot>(robots)) {
     float robotX = robot.position.x;
@@ -778,6 +819,7 @@ public void playerRobotCollision(float playerX, float playerY, int playerSize){
   }
 }
 
+//collsion
 public void playerSeekBotCollision(float playerX, float playerY, int playerSize){
   for(SeekBot robot : new ArrayList<SeekBot>(seekBots)) {
     float robotX = robot.position.x;
@@ -801,6 +843,7 @@ public void playerSeekBotCollision(float playerX, float playerY, int playerSize)
   }
 }
 
+//collsion
 public void detectBulletCollision(){
   for(Bullet bullet : new ArrayList<Bullet>(bullets)){
 
@@ -1072,13 +1115,19 @@ class BSPNode {
   BSPNode rightChild;
   ArrayList<Room> corridors;
 
-
+  /*
+  This class acts as the node of the BSP Tree
+  */
   BSPNode(Partition partition) {
     this.partition = partition;
     this.leftChild = null;
     this.rightChild = null;
   }
 
+  /*
+    Splits each node's partition into two smaller partitions
+    which are used for its child nodes.
+  */
   public boolean split() {
     //split already occurred
     if(leftChild != null || rightChild != null) {
@@ -1087,20 +1136,25 @@ class BSPNode {
 
     boolean splitHorizontal = randomBoolean();
 
+    //determine the ratio between height and width
     if(partition.width > partition.height && partition.width / partition.height >=1.25f) {
       splitHorizontal = false;
     } else if(partition.height > partition.width && partition.height / partition.width >= 1.25f) {
       splitHorizontal = true;
     }
 
+    //determine the maximum size that a room can be after the split
     int max = (splitHorizontal ? partition.height : partition.width) - MIN_PARTITION_SIZE;
 
+    //exit if too small
     if(max <= MIN_PARTITION_SIZE) {
       return false;
     }
 
+    //random location between smallest and largest room size
     int splitLocation = (int) random(MIN_PARTITION_SIZE, max);
 
+    //assign child nodes by creating two new nodes containing the split partitions
     if(splitHorizontal) {
       this.leftChild = new BSPNode(new Partition(partition.position.x, partition.position.y, partition.width, splitLocation));
       this.rightChild = new BSPNode(new Partition(partition.position.x, partition.position.y + splitLocation, partition.width, partition.height - splitLocation));
@@ -1111,6 +1165,10 @@ class BSPNode {
     return true;
   }
 
+  /*
+    Create a randomly sized and positioned room.
+    Creates corridors between rooms.
+  */
   public void createRooms() {
 
     if(leftChild != null || rightChild != null) {
@@ -1128,12 +1186,14 @@ class BSPNode {
     } else {
       PVector roomSize;
       PVector roomPosition;
+      //room size between 75 and 90 percent of partition size
       roomSize = new PVector(random(0.75f * partition.width, 0.9f * partition.width), random(0.75f * partition.height, 0.9f * partition.height));
       roomPosition = new PVector(random(partition.position.x + 0.1f * partition.width, partition.position.x + 0.9f * partition.width - roomSize.x), random(partition.position.y + 0.1f * partition.height, partition.position.y + 0.9f * partition.height - roomSize.y));
       partition.room = new Room(roomPosition.x, roomPosition.y, roomSize.x, roomSize.y);
     }
   }
 
+  //get leaf nodes
   public Room getRoom() {
     if(partition.room != null) {
       return partition.room;
@@ -1161,7 +1221,7 @@ class BSPNode {
       }
     }
   }
-
+  //Create a corridor between two random points in left and right room
   public void createCorridor(Room leftRoom, Room rightRoom) {
     corridors = new ArrayList();
 
@@ -1173,6 +1233,8 @@ class BSPNode {
     float w = pointB.x - pointA.x;
     float h = pointB.y - pointA.y;
 
+
+    //create two corridors that intercept 
     if(w < 0) {
       if(h < 0) {
         if(randomBoolean()) {
@@ -1235,6 +1297,10 @@ class BSPTree {
 
   ArrayList<BSPNode> nodes;
 
+  /*
+    Binary Space Partition Tree Structure
+    Nodes all contained within an ArrayList
+  */
   BSPTree() {
     nodes = new ArrayList();
     Partition base = new Partition(0,0, displayWidth, displayHeight);
@@ -1242,6 +1308,8 @@ class BSPTree {
     generateNodes();
   }
 
+  //generate nodes until no more rooms can be created
+  //create rooms and corridors for each leaf node
   public void generateNodes() {
     boolean split = true;
 
@@ -1310,6 +1378,7 @@ class Bullet {
   PVector acceleration;
   boolean enemy;
 
+  //Bullet act as a simple projectile towards a target
   Bullet(float startX, float startY, float endX, float endY, boolean enemy) {
     this.position = new PVector(startX, startY);
     this.destination = new PVector(endX, endY);
@@ -1319,18 +1388,16 @@ class Bullet {
     this.enemy = enemy;
   }
 
+  //calculate direction of travel
   public PVector calculateDirection() {
     return PVector.sub(destination, position);
   }
 
+  //calculate acceleration
   public PVector calculateAcceleration() {
     PVector a = this.direction.normalize();
     a = this.direction.mult(0.5f);
     return a;
-  }
-
-  public void checkWalls() {
-
   }
 
   public void update(){
@@ -1340,6 +1407,7 @@ class Bullet {
   }
 
   public void display(){
+    stroke(100);
     if(enemy) {
       fill(255, 0, 255);
     } else {
@@ -1493,6 +1561,7 @@ class Human {
     fill(0,255,255);
     circle(position.x, position.y, humanSize);
     fill(0);
+    textSize(12);
     textAlign(CENTER, CENTER);
     text(member, position.x, position.y);
   }
@@ -1577,15 +1646,6 @@ class InvinciblePowerUp extends PowerUp {
     display();
   }
 }
-class Line {
-  PVector start;
-  PVector end;
-
-  Line(float x1, float y1, float x2, float y2) {
-    start = new PVector(x1, y1);
-    end = new PVector(x2, y2);
-  }
-}
 class Map {
 
   BSPTree tree;
@@ -1650,6 +1710,7 @@ class MeleeBot extends Robot {
   PVector direction;
   PVector pursueTarget;
 
+  //Robot that attacks by colliding with player
   MeleeBot(float x, float y, int roomIndex) {
     super(x , y, roomIndex);
     this.pursue = false;
@@ -1677,7 +1738,7 @@ class MeleeBot extends Robot {
     update(player);
     display();
   }
-
+  //ensure robot stays in area
   public void ensureInArea(){
 
     int cornerBounce = player.playerSize*10;
@@ -1713,6 +1774,7 @@ class MeleeBot extends Robot {
     }
   }
 
+  //pursure code from studres
   public void pursue(Player player) {
     direction.x = player.position.x + player.playerSize/2 - this.position.x;
     direction.y = player.position.y + player.playerSize/2 - this.position.y;
@@ -1741,7 +1803,7 @@ class MeleeBot extends Robot {
     }
   }
 
-
+  //integrate from studres
   public void integrate(PVector targetPos, float angular) {
     this.position.add(this.velocity);
 
@@ -1844,7 +1906,10 @@ class Partition {
   int height;
   int width;
   Room room;
-
+  /*
+  Represents a space is split into and the area a room may
+  be created in
+  */
   Partition(float x, float y, int width, int height) {
     this.position = new PVector(x, y);
     this.width = width;
@@ -1870,7 +1935,9 @@ class Player {
             PLAYER_LIVES = 3;
 
 
-
+  /*
+    Class representing the superhuman
+  */
   PVector position;
   PVector velocity;
   int playerSize;
@@ -1887,6 +1954,8 @@ class Player {
     this.roomIndex = 0;
   }
 
+  //move in the direction ordered by the player
+  //has incremental velocity and not instantaneous
   public void move(int i) {
     switch (i) {
       case 1:
@@ -1906,6 +1975,9 @@ class Player {
     }
   }
 
+  //move the player up to its max speed
+  //if key is keyReleased, momentum keeps player moving
+  //draw/friction causes player to stop
   public void update() {
     velocity.limit(2*PLAYER_SPEED);
     velocity.x *= 0.90f;
@@ -1972,7 +2044,9 @@ class Robot {
   float orientation;
   int roomIndex;
   int size;
-
+  /*
+    Super Class representing base robot and behaviour
+  */
   Robot(float x, float y, int roomIndex) {
     this.startPosition = new PVector(x, y);
     this.position = new PVector(x, y);
@@ -1994,6 +2068,7 @@ class Robot {
 
   }
 
+  //wander randomly - code from example on studres and adjusted
   public void wander(){
     ensureRobotInArea();
     velocity.x = cos(orientation);
@@ -2011,6 +2086,8 @@ class Robot {
     }
   }
 
+  //ensures that the robot stays in bounds by checking colours and edges
+  //inverses velocity if at boundary
   public void ensureRobotInArea() {
     float cornerBounce = 1;
 
@@ -2050,11 +2127,9 @@ class Robot {
         velocity.y = - cornerBounce;
       }
     }
+  }
 
-
-
-}
-
+    //detection methods.
 
      public boolean detectBottomEdge() {
       int downY= (int) this.position.y + this.size;
@@ -2121,6 +2196,9 @@ class Room {
   int height;
   int width;
 
+  /*
+  Represents the playable room for the game.
+  */
   Room(float x, float y, float width, float height) {
     this.position = new PVector(x, y);
     this.width = (int) width;

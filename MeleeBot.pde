@@ -10,6 +10,7 @@ class MeleeBot extends Robot {
   PVector direction;
   PVector pursueTarget;
 
+  //Robot that attacks by colliding with player
   MeleeBot(float x, float y, int roomIndex) {
     super(x , y, roomIndex);
     this.pursue = false;
@@ -37,7 +38,7 @@ class MeleeBot extends Robot {
     update(player);
     display();
   }
-
+  //ensure robot stays in area
   void ensureInArea(){
 
     int cornerBounce = player.playerSize*10;
@@ -73,6 +74,7 @@ class MeleeBot extends Robot {
     }
   }
 
+  //pursure code from studres
   void pursue(Player player) {
     direction.x = player.position.x + player.playerSize/2 - this.position.x;
     direction.y = player.position.y + player.playerSize/2 - this.position.y;
@@ -101,7 +103,7 @@ class MeleeBot extends Robot {
     }
   }
 
-
+  //integrate from studres
   void integrate(PVector targetPos, float angular) {
     this.position.add(this.velocity);
 

@@ -3,6 +3,9 @@ class Room {
   int height;
   int width;
 
+  /*
+  Represents the playable room for the game.
+  */
   Room(float x, float y, float width, float height) {
     this.position = new PVector(x, y);
     this.width = (int) width;

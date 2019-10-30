@@ -4,6 +4,10 @@ class BSPTree {
 
   ArrayList<BSPNode> nodes;
 
+  /*
+    Binary Space Partition Tree Structure
+    Nodes all contained within an ArrayList
+  */
   BSPTree() {
     nodes = new ArrayList();
     Partition base = new Partition(0,0, displayWidth, displayHeight);
@@ -11,6 +15,8 @@ class BSPTree {
     generateNodes();
   }
 
+  //generate nodes until no more rooms can be created
+  //create rooms and corridors for each leaf node
   void generateNodes() {
     boolean split = true;
 

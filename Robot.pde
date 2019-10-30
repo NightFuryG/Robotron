@@ -10,7 +10,9 @@ class Robot {
   float orientation;
   int roomIndex;
   int size;
-
+  /*
+    Super Class representing base robot and behaviour
+  */
   Robot(float x, float y, int roomIndex) {
     this.startPosition = new PVector(x, y);
     this.position = new PVector(x, y);
@@ -32,6 +34,7 @@ class Robot {
 
   }
 
+  //wander randomly - code from example on studres and adjusted
   void wander(){
     ensureRobotInArea();
     velocity.x = cos(orientation);
@@ -49,6 +52,8 @@ class Robot {
     }
   }
 
+  //ensures that the robot stays in bounds by checking colours and edges
+  //inverses velocity if at boundary
   void ensureRobotInArea() {
     float cornerBounce = 1;
 
@@ -88,11 +93,9 @@ class Robot {
         velocity.y = - cornerBounce;
       }
     }
+  }
 
-
-
-}
-
+    //detection methods.
 
      boolean detectBottomEdge() {
       int downY= (int) this.position.y + this.size;

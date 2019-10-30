@@ -15,6 +15,7 @@ final int INVINCIBLE_DURATION = 10000;
 final int BASE_MULTIPLIER = 10,
           OBSTACLE_MULTIPLIER = 2;
 
+//intialise Variables
 Map map;
 Player player;
 boolean w, a, s, d;
@@ -39,6 +40,7 @@ int startTime;
 boolean powerupstarted;
 int invincibleDuration;
 
+//sound
 Minim minim;
 AudioSample shootSound;
 AudioSample hitSound;
@@ -89,6 +91,8 @@ void setup () {
 }
 
 void draw () {
+
+    //display text top left
     background(0);
     pushStyle();
     textAlign(CENTER);
@@ -99,9 +103,10 @@ void draw () {
     text("Score: " + score, 5.7 * displayWidth/TEXT_POSITION, displayWidth/(TEXT_POSITION*2));
 
     popStyle();
-
+    //game logic
     if(alive) {
       if(startScreen) {
+        //start screen
         pushStyle();
         textAlign(CENTER);
         textSize(64);
@@ -149,6 +154,7 @@ void draw () {
     }
 }
 
+//start a new wave
 void newWave(){
   if(checkWaveEnd()) {
     map = new Map();
@@ -158,6 +164,7 @@ void newWave(){
   }
 }
 
+//reset Variables
 void reset(){
   bullets.clear();
   family.clear();
@@ -177,6 +184,7 @@ void reset(){
   invinciblePowerUp = false;
 }
 
+//start a new game
 void newGame(){
   map = new Map();
   lives = 5;
@@ -187,6 +195,7 @@ void newGame(){
   alive = true;
 }
 
+//Melee bot pursue player
 void meleeBotPursue() {
   for(Robot robot : robots) {
     if(robot instanceof MeleeBot) {
@@ -199,6 +208,7 @@ void meleeBotPursue() {
   }
 }
 
+//check player is alive
 boolean checkNotDead() {
   if(lives > 0 || invinciblePowerUp) {
     return true;
@@ -206,6 +216,7 @@ boolean checkNotDead() {
   return false;
 }
 
+//check if enough points earned for a new life
 void checkNewLife() {
   if(score >= newLife * NEW_LIFE) {
     player.lives++;
@@ -213,6 +224,7 @@ void checkNewLife() {
   }
 }
 
+//check if power up active
 void checkPowerUps() {
   if(bombPowerUp) {
     activateBomb();
@@ -229,6 +241,7 @@ void checkPowerUps() {
   }
 }
 
+//activate Invincibility
 void activeInvincible(int startTime) {
 
   if(!(millis() < startTime + INVINCIBLE_DURATION)) {
@@ -239,6 +252,7 @@ void activeInvincible(int startTime) {
   }
 }
 
+//activate Bomb
 void activateBomb() {
 
   int countA = 0;
@@ -261,6 +275,7 @@ void activateBomb() {
   bombPowerUp = false;
 }
 
+//spawn player
 Player spawnPlayer(int lives) {
   Room firstRoom = map.rooms.get(0);
   int startX = (int) firstRoom.position.x + firstRoom.width/2;
@@ -268,6 +283,7 @@ Player spawnPlayer(int lives) {
   return new Player(startX, startY, lives);
 }
 
+// determine which room player is in
 void updatePlayerRoom(){
   float playerX = player.position.x;
   float playerY = player.position.y;
@@ -286,6 +302,7 @@ void updatePlayerRoom(){
   }
 }
 
+// determine which room robot is in
 void updateRobotRoom() {
   for(Robot robot : robots) {
     float robotX = robot.position.x;
@@ -306,6 +323,7 @@ void updateRobotRoom() {
   }
 }
 
+// movement
 void keyPressed() {
     if(key == 'w') {
       w = true;
@@ -318,6 +336,7 @@ void keyPressed() {
     }
 }
 
+// movement
 void keyReleased() {
   if(key == 'w') {
     w = false;
@@ -330,6 +349,7 @@ void keyReleased() {
   }
 }
 
+// firing
 void mousePressed(){
   if(!startScreen) {
     if(alive) {
@@ -343,6 +363,7 @@ void mousePressed(){
   }
 }
 
+// enemy fire
 void rangedBotFire(){
   for(Robot robot : robots) {
     if(robot instanceof RangedBot) {
@@ -352,13 +373,14 @@ void rangedBotFire(){
             bullets.add(new Bullet(robot.position.x + robot.size/2, robot.position.y + robot.size/2, player.position.x, player.position.y, true));
           }
         } else {
-            if(frameCount % 30 == 0)
+            if(frameCount % 10 == 0)
               bullets.add(new Bullet(robot.position.x + robot.size/2, robot.position.y + robot.size/2, player.position.x, player.position.y, true));
           }
       }
     }
 }
 
+// movement
 void playerMove() {
   if(w) {
     if(checkNotBlack(getUpColor()) && !checkTopEdge()){
@@ -382,6 +404,7 @@ void playerMove() {
   }
 }
 
+// edge detection
 void ensurePlayerInArea(){
 
   int cornerBounce = player.playerSize*10;
@@ -417,6 +440,7 @@ void ensurePlayerInArea(){
   }
 }
 
+// check methods
 boolean checkBottomEdge() {
   int downY= (int) player.position.y + player.playerSize/2;
   return downY >= displayHeight;
@@ -469,12 +493,14 @@ boolean checkNotBlack(color inColor){
   return inColor != BLACK;
 }
 
+//draw
 void drawBullets() {
   for(Bullet bullet : bullets) {
     bullet.draw();
   }
 }
 
+//draw
 void drawFamily() {
   for(int i = 0; i < family.size(); i++) {
     if(family.get(i).flee) {
@@ -489,10 +515,12 @@ void drawFamily() {
   }
 }
 
+// check end of wave
 boolean checkWaveEnd(){
   return ((robots.size() == 0 && seekBots.size() == 0)? true : false);
 }
 
+// remove missed bullets
 void removeMissedBullets() {
   for(Bullet bullet : new ArrayList<Bullet>(bullets)) {
     color detectedColor = get((int) bullet.position.x, (int) bullet.position.y);
@@ -502,6 +530,7 @@ void removeMissedBullets() {
   }
 }
 
+//collsion
 void detectSeekBotFamilyCollision(){
   for(Human human : new ArrayList<Human>(family)) {
     float humanX = human.position.x;
@@ -527,6 +556,7 @@ void detectSeekBotFamilyCollision(){
   }
 }
 
+//spawn methods
 void spawnFamilyAndSeekBots(){
 
   int randomRoomIndex;
@@ -591,6 +621,7 @@ SeekBot spawnDefaultSeekBot(int randomRoomIndex, int humanCount){
   return spawnSeekBot(spawnLocation, randomRoomIndex, humanCount);
 }
 
+// spawn radius
 boolean checkCentralRoomSpawn(PVector spawnLocation, int randomRoomIndex) {
   float spawnRadius = displayWidth/HUMAN_RADIUS_PROPORTION;
   Room room = map.rooms.get(randomRoomIndex);
@@ -604,6 +635,7 @@ boolean checkCentralRoomSpawn(PVector spawnLocation, int randomRoomIndex) {
   return true;
 }
 
+//spawn check
 boolean checkSpawnLocation(PVector spawnLocation) {
   float spawnRadius = displayWidth/(HUMAN_RADIUS_PROPORTION/2);
 
@@ -621,6 +653,7 @@ boolean checkSpawnLocation(PVector spawnLocation) {
   return true;
 }
 
+// get inverse room position
 PVector inverseRandomPointInRoom(int index, PVector familyPosition) {
 
   Room room = map.rooms.get(index);
@@ -633,6 +666,7 @@ PVector inverseRandomPointInRoom(int index, PVector familyPosition) {
   return seekBotSpawnPosition;
 }
 
+//spawn family
 void spawnFamilyMember(int i, PVector randomPointInRoom, int humanCount){
     switch(i) {
       case 0:
@@ -649,6 +683,7 @@ void spawnFamilyMember(int i, PVector randomPointInRoom, int humanCount){
     }
 }
 
+//collisons
 void detectPlayerFamilyCollision(){
   float playerX = player.position.x;
   float playerY = player.position.y;
@@ -677,6 +712,7 @@ void detectPlayerFamilyCollision(){
   }
 }
 
+//collision
 void detectPlayerPowerUpCollision(){
   float playerX = player.position.x;
   float playerY = player.position.y;
@@ -699,6 +735,7 @@ void detectPlayerPowerUpCollision(){
   }
 }
 
+//collsion
 void detectEnemyCollision() {
   float playerX = player.position.x;
   float playerY = player.position.y;
@@ -715,6 +752,7 @@ void detectEnemyCollision() {
   }
 }
 
+//collision
 void playerObstacleCollision(float playerX, float playerY, int playerSize){
   for(Obstacle obstacle : new ArrayList<Obstacle>(obstacles)) {
     float obstacleX = obstacle.position.x;
@@ -733,6 +771,7 @@ void playerObstacleCollision(float playerX, float playerY, int playerSize){
   }
 }
 
+//reset player
 void resetPosition(){
     Room spawnRoom = map.rooms.get(0);
     player.position.x = spawnRoom.position.x + spawnRoom.width/2;
@@ -743,6 +782,7 @@ void resetPosition(){
     hitSound.trigger();
 }
 
+//collision
 void playerRobotCollision(float playerX, float playerY, int playerSize){
   for(Robot robot : new ArrayList<Robot>(robots)) {
     float robotX = robot.position.x;
@@ -761,6 +801,7 @@ void playerRobotCollision(float playerX, float playerY, int playerSize){
   }
 }
 
+//collsion
 void playerSeekBotCollision(float playerX, float playerY, int playerSize){
   for(SeekBot robot : new ArrayList<SeekBot>(seekBots)) {
     float robotX = robot.position.x;
@@ -784,6 +825,7 @@ void playerSeekBotCollision(float playerX, float playerY, int playerSize){
   }
 }
 
+//collsion
 void detectBulletCollision(){
   for(Bullet bullet : new ArrayList<Bullet>(bullets)){
 

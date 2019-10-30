@@ -137,6 +137,7 @@ class Human {
     fill(0,255,255);
     circle(position.x, position.y, humanSize);
     fill(0);
+    textSize(12);
     textAlign(CENTER, CENTER);
     text(member, position.x, position.y);
   }

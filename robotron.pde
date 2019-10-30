@@ -1,3 +1,5 @@
+import ddf.minim.*;
+
 final color BLACK = color(0),
             WHITE = color(255);
 
@@ -37,17 +39,34 @@ int startTime;
 boolean powerupstarted;
 int invincibleDuration;
 
+Mimim minim;
+AudioSample shootSound;
+AudioSample hitSound;
+AudioSample newWaveSound;
+AudioPlayer gameOverSound;
+AudioPlayer bombSound;
+AudioPlayer invincibleSound;
 
 void setup () {
   fullScreen();
   cursor(CROSS);
   smooth();
+
+  minim = new Minim(this);
+  shootSound = minim.loadSample("data/shoot.mp3");
+  hitSound = minim.loadSample("data/hit.mp3");
+  newWaveSound = minim.loadSample("data/newWave.mp3");
+  gameOverSound = minim.loadFile("data/gameOver.mp3");
+  bombSound = minim.loadFile("data/bomb.mp3");
+  invincibleSound = minim.loadFile("data/invincible1.mp3");
+
+
   map = new Map();
   w = a = s = d = false;
   score = 0;
-  wave = 0;
+  wave = 1;
   newLife = 1;
-  lives = 3;
+  lives = 5;
   player = spawnPlayer(lives);
   size = displayWidth/HUMAN_RADIUS_PROPORTION;
   alive = true;
@@ -113,6 +132,7 @@ void draw () {
         detectPlayerPowerUpCollision();
         checkPowerUps();
         checkNewLife();
+        player.lives = lives;
         newWave();
         alive = checkNotDead();
       }
@@ -125,6 +145,7 @@ void draw () {
       textSize(24);
       text("Click to Restart", displayWidth/2, 3*displayHeight/4);
       popStyle();
+      gameOverSound.play();
     }
 }
 
@@ -133,6 +154,7 @@ void newWave(){
     map = new Map();
     reset();
     wave++;
+    newWaveSound.trigger();
   }
 }
 
@@ -157,10 +179,10 @@ void reset(){
 
 void newGame(){
   map = new Map();
-  lives = 3;
+  lives = 5;
   newLife = 1;
   score = 0;
-  wave = 0;
+  wave = 1;
   reset();
   alive = true;
 }
@@ -178,7 +200,7 @@ void meleeBotPursue() {
 }
 
 boolean checkNotDead() {
-  if(player.lives > 0 || invinciblePowerUp) {
+  if(lives > 0 || invinciblePowerUp) {
     return true;
   }
   return false;
@@ -187,19 +209,23 @@ boolean checkNotDead() {
 void checkNewLife() {
   if(score >= newLife * NEW_LIFE) {
     player.lives++;
+    newLife++;
   }
 }
 
 void checkPowerUps() {
   if(bombPowerUp) {
     activateBomb();
+    bombSound.play();
   }
   if(invinciblePowerUp) {
     if (!powerupstarted) {
       startTime = millis();
       powerupstarted = true;
+      invincibleSound.play();
+    } else {
+      activeInvincible(startTime);
     }
-    activeInvincible(startTime);
   }
 }
 
@@ -207,6 +233,7 @@ void activeInvincible(int startTime) {
 
   if(!(millis() < startTime + INVINCIBLE_DURATION)) {
     invinciblePowerUp = false;
+    powerupstarted = false;
   } else {
     invinciblePowerUp = true;
   }
@@ -307,6 +334,7 @@ void mousePressed(){
   if(!startScreen) {
     if(alive) {
       bullets.add(new Bullet(player.position.x, player.position.y, mouseX, mouseY, false));
+      shootSound.trigger();
     } else {
       newGame();
     }
@@ -328,7 +356,7 @@ void rangedBotFire(){
           }
       }
     }
-  }
+}
 
 void playerMove() {
   if(w) {
@@ -435,8 +463,6 @@ color getDownColor() {
   color downColor = get(downX, downY);
   return downColor;
 }
-
-
 
 boolean checkNotBlack(color inColor){
   return inColor != BLACK;
@@ -698,7 +724,7 @@ void playerObstacleCollision(float playerX, float playerY, int playerSize){
       if(playerY > obstacleY - obstacleSize && playerY < obstacleY + obstacleSize) {
         obstacles.remove(obstacle);
         if(!invinciblePowerUp) {
-          player.lives--;
+          lives--;
           resetPosition();
         }
       }
@@ -712,6 +738,8 @@ void resetPosition(){
     player.position.y = spawnRoom.position.y + spawnRoom.height/2;
     player.velocity.x = 0;
     player.velocity.y = 0;
+    player.lives = lives;
+    hit.trigger();
 }
 
 void playerRobotCollision(float playerX, float playerY, int playerSize){
@@ -724,7 +752,7 @@ void playerRobotCollision(float playerX, float playerY, int playerSize){
       if(playerY - playerSize/2 < robotY + robotSize && playerY + playerSize/2 > robotY) {
         robots.remove(robot);
         if(!invinciblePowerUp) {
-          player.lives--;
+          lives--;
           resetPosition();
         }
       }
@@ -747,14 +775,13 @@ void playerSeekBotCollision(float playerX, float playerY, int playerSize){
         }
         seekBots.remove(robot);
         if(!invinciblePowerUp) {
-          player.lives--;
+          lives--;
           resetPosition();
         }
       }
     }
   }
 }
-
 
 void detectBulletCollision(){
   for(Bullet bullet : new ArrayList<Bullet>(bullets)){
@@ -783,7 +810,7 @@ void bulletPlayerCollision(Bullet bullet) {
   if(dist(bulletX, bulletY, playerX, playerY) < playerSize/2) {
 
     if(!invinciblePowerUp) {
-      player.lives--;
+      lives--;
       resetPosition();
     }
 
@@ -884,7 +911,6 @@ void bulletRobotCollision(Bullet bullet) {
       }
     }
   }
-
 }
 
 void spawnObstacles(){

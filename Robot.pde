@@ -5,12 +5,14 @@ class Robot {
   final float ROBOT_SPEED = displayWidth/1000;
 
   PVector position;
+  PVector startPosition;
   PVector velocity;
   float orientation;
   int roomIndex;
   int size;
 
   Robot(float x, float y, int roomIndex) {
+    this.startPosition = new PVector(x, y);
     this.position = new PVector(x, y);
     this.velocity = new PVector(1,1);
     this.size = displayWidth/ROBOT_SIZE;
@@ -31,7 +33,7 @@ class Robot {
   }
 
   void wander(){
-
+    ensureRobotInArea();
     velocity.x = cos(orientation);
     velocity.y = sin(orientation);
     velocity.mult(ROBOT_SPEED);
@@ -87,7 +89,7 @@ class Robot {
       }
     }
 
-    //top leftX
+
 
 }
 
@@ -139,6 +141,13 @@ class Robot {
       int downY= (int) this.position.y + this.size;
       color downColor = get(downX, downY);
       return downColor;
+    }
+
+    color getPositionColor() {
+      int x = (int) this.position.x + this.size/2;
+      int y = (int) this.position.y + this.size/2;
+      color positionColor = get(x, y);
+      return positionColor;
     }
 
     boolean detectNotBlack(color inColor){

@@ -26,6 +26,9 @@ final int NEW_LIFE = 1000;
 
 final int INVINCIBLE_DURATION = 10000;
 
+final int BASE_MULTIPLIER = 10,
+          OBSTACLE_MULTIPLIER = 10;
+
 Map map;
 Player player;
 boolean w, a, s, d;
@@ -41,6 +44,7 @@ int score;
 int size;
 int wave;
 int newLife;
+int lives;
 boolean alive;
 boolean startScreen;
 boolean bombPowerUp;
@@ -55,11 +59,12 @@ public void setup () {
   cursor(CROSS);
   
   map = new Map();
-  player = spawnPlayer();
   w = a = s = d = false;
   score = 0;
   wave = 0;
   newLife = 1;
+  lives = 3;
+  player = spawnPlayer(lives);
   size = displayWidth/HUMAN_RADIUS_PROPORTION;
   alive = true;
   startScreen = true;
@@ -78,7 +83,6 @@ public void setup () {
   spawnRobots();
   spawnPowerUps();
   checkRooms();
-  seekbotandfamily();
 }
 
 public void draw () {
@@ -119,6 +123,7 @@ public void draw () {
         drawRobots();
         drawPowerUps();
         detectPlayerFamilyCollision();
+        detectSeekBotFamilyCollision();
         detectEnemyCollision();
         detectBulletCollision();
         detectPlayerPowerUpCollision();
@@ -154,7 +159,9 @@ public void reset(){
   robots.clear();
   spawns.clear();
   powerUps.clear();
-  player = spawnPlayer();
+  seekBots.clear();
+  meleeBots.clear();
+  player = spawnPlayer(lives);
   spawnFamilyAndSeekBots();
   spawnObstacles();
   spawnRobots();
@@ -166,7 +173,7 @@ public void reset(){
 
 public void newGame(){
   map = new Map();
-  player.lives = 3;
+  lives = 3;
   newLife = 1;
   score = 0;
   wave = 0;
@@ -213,11 +220,11 @@ public void checkPowerUps() {
 }
 
 public void activeInvincible(int startTime) {
-  int lives = player.lives;
 
   if(!(millis() < startTime + INVINCIBLE_DURATION)) {
     invinciblePowerUp = false;
-    System.out.println("hello katei");
+  } else {
+    invinciblePowerUp = true;
   }
 }
 
@@ -243,11 +250,11 @@ public void activateBomb() {
   bombPowerUp = false;
 }
 
-public Player spawnPlayer() {
+public Player spawnPlayer(int lives) {
   Room firstRoom = map.rooms.get(0);
   int startX = (int) firstRoom.position.x + firstRoom.width/2;
   int startY = (int) firstRoom.position.y + firstRoom.height/2;
-  return new Player(startX, startY);
+  return new Player(startX, startY, lives);
 }
 
 public void updatePlayerRoom(){
@@ -328,11 +335,16 @@ public void rangedBotFire(){
   for(Robot robot : robots) {
     if(robot instanceof RangedBot) {
       if(robot.roomIndex == player.roomIndex)
-        if(frameCount % 40 == 0)
-          bullets.add(new Bullet(robot.position.x + robot.size/2, robot.position.y + robot.size/2, player.position.x, player.position.y, true));
+        if(wave % 5 != 0) {
+          if(frameCount % 40 == 0) {
+            bullets.add(new Bullet(robot.position.x + robot.size/2, robot.position.y + robot.size/2, player.position.x, player.position.y, true));
+          }
+        } else {
+              bullets.add(new Bullet(robot.position.x + robot.size/2, robot.position.y + robot.size/2, player.position.x, player.position.y, true));
+          }
+      }
     }
   }
-}
 
 public void playerMove() {
   if(w) {
@@ -440,10 +452,11 @@ public int getDownColor() {
   return downColor;
 }
 
+
+
 public boolean checkNotBlack(int inColor){
   return inColor != BLACK;
 }
-
 
 public void drawBullets() {
   for(Bullet bullet : bullets) {
@@ -466,7 +479,7 @@ public void drawFamily() {
 }
 
 public boolean checkWaveEnd(){
-  return (robots.size() == 0 ? true : false);
+  return ((robots.size() == 0 && seekBots.size() == 0)? true : false);
 }
 
 public void removeMissedBullets() {
@@ -474,6 +487,31 @@ public void removeMissedBullets() {
     int detectedColor = get((int) bullet.position.x, (int) bullet.position.y);
     if(!checkNotBlack(detectedColor)) {
       bullets.remove(bullet);
+    }
+  }
+}
+
+public void detectSeekBotFamilyCollision(){
+  for(Human human : new ArrayList<Human>(family)) {
+    float humanX = human.position.x;
+    float humanY = human.position.y;
+    float humanSize = human.humanSize;
+
+    for(SeekBot seekBot : new ArrayList<SeekBot>(seekBots)) {
+      float seekBotSize = seekBot.size;
+      float seekBotX = seekBot.position.x + seekBotSize/2;
+      float seekBotY = seekBot.position.y + seekBotSize/2;
+
+      if(human.member == seekBot.member) {
+        if(dist(humanX, humanY, seekBotX, seekBotY) < humanSize/2 + seekBotSize/2) {
+          seekBots.remove(seekBot);
+          family.remove(human);
+          robots.add(new MeleeBot(humanX, humanY, seekBot.roomIndex));
+          robots.add(new MeleeBot(humanX, humanY, seekBot.roomIndex));
+          robots.add(new RangedBot(humanX, humanY, seekBot.roomIndex));
+          robots.add(new RangedBot(humanX, humanY, seekBot.roomIndex));
+        }
+      }
     }
   }
 }
@@ -679,7 +717,6 @@ public void playerObstacleCollision(float playerX, float playerY, int playerSize
           player.lives--;
           resetPosition();
         }
-
       }
     }
   }
@@ -701,7 +738,6 @@ public void playerRobotCollision(float playerX, float playerY, int playerSize){
 
     if(playerX - playerSize/2 < robotX + robotSize && playerX + playerSize/2 > robotX) {
       if(playerY - playerSize/2 < robotY + robotSize && playerY + playerSize/2 > robotY) {
-
         robots.remove(robot);
         if(!invinciblePowerUp) {
           player.lives--;
@@ -761,8 +797,12 @@ public void bulletPlayerCollision(Bullet bullet) {
   float playerSize = player.playerSize;
 
   if(dist(bulletX, bulletY, playerX, playerY) < playerSize/2) {
-    player.lives--;
-    resetPosition();
+
+    if(!invinciblePowerUp) {
+      player.lives--;
+      resetPosition();
+    }
+
     bullets.remove(bullet);
   }
 }
@@ -837,29 +877,50 @@ public void bulletRobotCollision(Bullet bullet) {
       }
     }
   }
+
+  for(SeekBot robot : new ArrayList<SeekBot>(seekBots)) {
+    float robotX = robot.position.x;
+    float robotY = robot.position.y;
+    int robotSize = robot.size;
+
+    if(bulletX > robotX - robotSize && bulletX < robotX + robotSize) {
+      if(bulletY > robotY - robotSize && bulletY < robotY + robotSize) {
+        if(!bullet.enemy) {
+
+          for(Human human : family) {
+            if(human.member == robot.member) {
+              human.flee = false;
+            }
+          }
+
+          seekBots.remove(robot);
+          bullets.remove(bullet);
+          score += 20;
+        }
+      }
+    }
+  }
+
 }
 
 public void spawnObstacles(){
-  int randomRoomIndex;
-  int obstacleCount = 0;
 
-  while(obstacleCount < 10) {
-
-      randomRoomIndex = map.randomRoomIndex();
-      PVector randomPointInRoom = randomPointInRoom(randomRoomIndex);
+  for(int i = 1; i < map.rooms.size(); i++) {
+    for(int j = 0; j < OBSTACLE_MULTIPLIER + wave; j++) {
+      PVector randomPointInRoom = randomPointInRoom(i);
       if(checkSpawnLocation(randomPointInRoom)) {
-        spawns.add(randomPointInRoom);
-        obstacles.add(new Obstacle(randomPointInRoom.x, randomPointInRoom.y));
-        obstacleCount++;
-       }
+      spawns.add(randomPointInRoom);
+      obstacles.add(new Obstacle(randomPointInRoom.x, randomPointInRoom.y));
     }
+  }
+}
 }
 
 public void spawnRobots() {
   int randomRoomIndex;
   int robotCount = 0;
 
-  while(robotCount < 10) {
+  while(robotCount < BASE_MULTIPLIER + wave*2) {
 
       randomRoomIndex = map.randomRoomIndex();
       PVector randomPointInRoom = randomPointInRoom(randomRoomIndex);
@@ -909,14 +970,12 @@ public void drawRobots(){
 
   for(int i = 0; i < seekBots.size(); i++) {
     if(seekBots.get(i).pursue == true) {
-      System.out.println(true);
       for(int j = 0; j < family.size(); j++){
         if(seekBots.get(i).member == family.get(j).member) {
           seekBots.get(i).draw(family.get(j));
         }
       }
     } else {
-      System.out.println(false);
       seekBots.get(i).draw();
     }
   }
@@ -959,10 +1018,8 @@ public void printSpawns() {
 public void checkRooms() {
   for(Room room : map.rooms) {
     if(room.position.x + room.width > displayWidth) {
-      System.out.println("bad x");
     }
     if(room.position.y + room.height > displayHeight) {
-      System.out.println("bad y");
     }
   }
 }
@@ -1793,12 +1850,12 @@ class Player {
   int lives;
   int roomIndex;
 
-  Player(int x, int y) {
+  Player(int x, int y, int lives) {
     this.position = new PVector(x, y);
     this.velocity = new PVector(0,0);
     this.playerSize = PLAYER_RADIUS;
     this.playerSpeed = PLAYER_SPEED;
-    this.lives = PLAYER_LIVES;
+    this.lives = lives;
     this.roomIndex = 0;
   }
 
@@ -1882,12 +1939,14 @@ class Robot {
   final float ROBOT_SPEED = displayWidth/1000;
 
   PVector position;
+  PVector startPosition;
   PVector velocity;
   float orientation;
   int roomIndex;
   int size;
 
   Robot(float x, float y, int roomIndex) {
+    this.startPosition = new PVector(x, y);
     this.position = new PVector(x, y);
     this.velocity = new PVector(1,1);
     this.size = displayWidth/ROBOT_SIZE;
@@ -1908,7 +1967,7 @@ class Robot {
   }
 
   public void wander(){
-
+    ensureRobotInArea();
     velocity.x = cos(orientation);
     velocity.y = sin(orientation);
     velocity.mult(ROBOT_SPEED);
@@ -1964,7 +2023,12 @@ class Robot {
       }
     }
 
-    //top leftX
+    // if(!detectNotBlack(getPositionColor())) {
+    //   this.position.x = startPosition.x;
+    //   this.position.y = startPosition.y;
+    //   System.out.println("true");
+    // }
+
 
 }
 
@@ -2016,6 +2080,13 @@ class Robot {
       int downY= (int) this.position.y + this.size;
       int downColor = get(downX, downY);
       return downColor;
+    }
+
+    public int getPositionColor() {
+      int x = (int) this.position.x + this.size/2;
+      int y = (int) this.position.y + this.size/2;
+      int positionColor = get(x, y);
+      return positionColor;
     }
 
     public boolean detectNotBlack(int inColor){
@@ -2072,11 +2143,12 @@ class SeekBot extends Robot {
   }
 
   public void update(Human human) {
+    ensureRobotInArea();
     pursue(human);
   }
 
   public void update() {
-
+    wander();
   }
 
   public void display() {
@@ -2087,7 +2159,6 @@ class SeekBot extends Robot {
   public void draw(Human human){
     update(human);
     display();
-    System.out.println("reached");
   }
 
   public void draw() {
@@ -2118,37 +2189,6 @@ class SeekBot extends Robot {
     velocity.limit(0.5f);
     this.position.add(this.velocity);
 
-    int cornerBounce = 1;
-
-    if(!checkNotBlack(getLeftColor()) || checkLeftEdge()) {
-      if (this.velocity.x < 0) {
-        this.velocity.x = -this.velocity.x;
-      }
-      else if (this.velocity.x >= 0) {
-        this.velocity.x = cornerBounce;
-      }
-    }
-    if(!checkNotBlack(getRightColor()) || checkRightEdge()){
-      if (this.velocity.x > 0) {
-        this.velocity.x = -this.velocity.x;
-      } else if (this.velocity.x <= 0) {
-          this.velocity.x = -cornerBounce;
-      }
-    }
-    if(!checkNotBlack(getUpColor()) || checkTopEdge()){
-      if (this.velocity.y < 0) {
-        this.velocity.y = -this.velocity.y;
-      } else if (this.velocity.y >= 0) {
-          this.velocity.y = cornerBounce;
-      }
-    }
-    if(!checkNotBlack(getDownColor()) || checkBottomEdge()){
-      if (this.velocity.y > 0) {
-        this.velocity.y = -this.velocity.y;
-      } else if (this.velocity.y <= 0) {
-        this.velocity.y = -cornerBounce;
-      }
-    }
 
     orientation += rotation ;
     if (orientation > PI) orientation -= 2*PI ;

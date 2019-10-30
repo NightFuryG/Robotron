@@ -10,6 +10,9 @@ final int NEW_LIFE = 1000;
 
 final int INVINCIBLE_DURATION = 10000;
 
+final int BASE_MULTIPLIER = 10,
+          OBSTACLE_MULTIPLIER = 2;
+
 Map map;
 Player player;
 boolean w, a, s, d;
@@ -25,6 +28,7 @@ int score;
 int size;
 int wave;
 int newLife;
+int lives;
 boolean alive;
 boolean startScreen;
 boolean bombPowerUp;
@@ -39,11 +43,12 @@ void setup () {
   cursor(CROSS);
   smooth();
   map = new Map();
-  player = spawnPlayer();
   w = a = s = d = false;
   score = 0;
   wave = 0;
   newLife = 1;
+  lives = 3;
+  player = spawnPlayer(lives);
   size = displayWidth/HUMAN_RADIUS_PROPORTION;
   alive = true;
   startScreen = true;
@@ -62,7 +67,6 @@ void setup () {
   spawnRobots();
   spawnPowerUps();
   checkRooms();
-  seekbotandfamily();
 }
 
 void draw () {
@@ -103,6 +107,7 @@ void draw () {
         drawRobots();
         drawPowerUps();
         detectPlayerFamilyCollision();
+        detectSeekBotFamilyCollision();
         detectEnemyCollision();
         detectBulletCollision();
         detectPlayerPowerUpCollision();
@@ -138,7 +143,9 @@ void reset(){
   robots.clear();
   spawns.clear();
   powerUps.clear();
-  player = spawnPlayer();
+  seekBots.clear();
+  meleeBots.clear();
+  player = spawnPlayer(lives);
   spawnFamilyAndSeekBots();
   spawnObstacles();
   spawnRobots();
@@ -150,7 +157,7 @@ void reset(){
 
 void newGame(){
   map = new Map();
-  player.lives = 3;
+  lives = 3;
   newLife = 1;
   score = 0;
   wave = 0;
@@ -197,11 +204,11 @@ void checkPowerUps() {
 }
 
 void activeInvincible(int startTime) {
-  int lives = player.lives;
 
   if(!(millis() < startTime + INVINCIBLE_DURATION)) {
     invinciblePowerUp = false;
-    System.out.println("hello katei");
+  } else {
+    invinciblePowerUp = true;
   }
 }
 
@@ -227,11 +234,11 @@ void activateBomb() {
   bombPowerUp = false;
 }
 
-Player spawnPlayer() {
+Player spawnPlayer(int lives) {
   Room firstRoom = map.rooms.get(0);
   int startX = (int) firstRoom.position.x + firstRoom.width/2;
   int startY = (int) firstRoom.position.y + firstRoom.height/2;
-  return new Player(startX, startY);
+  return new Player(startX, startY, lives);
 }
 
 void updatePlayerRoom(){
@@ -312,11 +319,16 @@ void rangedBotFire(){
   for(Robot robot : robots) {
     if(robot instanceof RangedBot) {
       if(robot.roomIndex == player.roomIndex)
-        if(frameCount % 40 == 0)
-          bullets.add(new Bullet(robot.position.x + robot.size/2, robot.position.y + robot.size/2, player.position.x, player.position.y, true));
+        if(wave % 5 != 0) {
+          if(frameCount % 40 == 0) {
+            bullets.add(new Bullet(robot.position.x + robot.size/2, robot.position.y + robot.size/2, player.position.x, player.position.y, true));
+          }
+        } else {
+              bullets.add(new Bullet(robot.position.x + robot.size/2, robot.position.y + robot.size/2, player.position.x, player.position.y, true));
+          }
+      }
     }
   }
-}
 
 void playerMove() {
   if(w) {
@@ -424,10 +436,11 @@ color getDownColor() {
   return downColor;
 }
 
+
+
 boolean checkNotBlack(color inColor){
   return inColor != BLACK;
 }
-
 
 void drawBullets() {
   for(Bullet bullet : bullets) {
@@ -450,7 +463,7 @@ void drawFamily() {
 }
 
 boolean checkWaveEnd(){
-  return (robots.size() == 0 ? true : false);
+  return ((robots.size() == 0 && seekBots.size() == 0)? true : false);
 }
 
 void removeMissedBullets() {
@@ -458,6 +471,31 @@ void removeMissedBullets() {
     color detectedColor = get((int) bullet.position.x, (int) bullet.position.y);
     if(!checkNotBlack(detectedColor)) {
       bullets.remove(bullet);
+    }
+  }
+}
+
+void detectSeekBotFamilyCollision(){
+  for(Human human : new ArrayList<Human>(family)) {
+    float humanX = human.position.x;
+    float humanY = human.position.y;
+    float humanSize = human.humanSize;
+
+    for(SeekBot seekBot : new ArrayList<SeekBot>(seekBots)) {
+      float seekBotSize = seekBot.size;
+      float seekBotX = seekBot.position.x + seekBotSize/2;
+      float seekBotY = seekBot.position.y + seekBotSize/2;
+
+      if(human.member == seekBot.member) {
+        if(dist(humanX, humanY, seekBotX, seekBotY) < humanSize/2 + seekBotSize/2) {
+          seekBots.remove(seekBot);
+          family.remove(human);
+          robots.add(new MeleeBot(humanX, humanY, seekBot.roomIndex));
+          robots.add(new MeleeBot(humanX, humanY, seekBot.roomIndex));
+          robots.add(new RangedBot(humanX, humanY, seekBot.roomIndex));
+          robots.add(new RangedBot(humanX, humanY, seekBot.roomIndex));
+        }
+      }
     }
   }
 }
@@ -663,7 +701,6 @@ void playerObstacleCollision(float playerX, float playerY, int playerSize){
           player.lives--;
           resetPosition();
         }
-
       }
     }
   }
@@ -685,7 +722,6 @@ void playerRobotCollision(float playerX, float playerY, int playerSize){
 
     if(playerX - playerSize/2 < robotX + robotSize && playerX + playerSize/2 > robotX) {
       if(playerY - playerSize/2 < robotY + robotSize && playerY + playerSize/2 > robotY) {
-
         robots.remove(robot);
         if(!invinciblePowerUp) {
           player.lives--;
@@ -745,8 +781,12 @@ void bulletPlayerCollision(Bullet bullet) {
   float playerSize = player.playerSize;
 
   if(dist(bulletX, bulletY, playerX, playerY) < playerSize/2) {
-    player.lives--;
-    resetPosition();
+
+    if(!invinciblePowerUp) {
+      player.lives--;
+      resetPosition();
+    }
+
     bullets.remove(bullet);
   }
 }
@@ -821,29 +861,50 @@ void bulletRobotCollision(Bullet bullet) {
       }
     }
   }
+
+  for(SeekBot robot : new ArrayList<SeekBot>(seekBots)) {
+    float robotX = robot.position.x;
+    float robotY = robot.position.y;
+    int robotSize = robot.size;
+
+    if(bulletX > robotX - robotSize && bulletX < robotX + robotSize) {
+      if(bulletY > robotY - robotSize && bulletY < robotY + robotSize) {
+        if(!bullet.enemy) {
+
+          for(Human human : family) {
+            if(human.member == robot.member) {
+              human.flee = false;
+            }
+          }
+
+          seekBots.remove(robot);
+          bullets.remove(bullet);
+          score += 20;
+        }
+      }
+    }
+  }
+
 }
 
 void spawnObstacles(){
-  int randomRoomIndex;
-  int obstacleCount = 0;
 
-  while(obstacleCount < 10) {
-
-      randomRoomIndex = map.randomRoomIndex();
-      PVector randomPointInRoom = randomPointInRoom(randomRoomIndex);
+  for(int i = 1; i < map.rooms.size(); i++) {
+    for(int j = 0; j < OBSTACLE_MULTIPLIER + wave; j++) {
+      PVector randomPointInRoom = randomPointInRoom(i);
       if(checkSpawnLocation(randomPointInRoom)) {
-        spawns.add(randomPointInRoom);
-        obstacles.add(new Obstacle(randomPointInRoom.x, randomPointInRoom.y));
-        obstacleCount++;
-       }
+      spawns.add(randomPointInRoom);
+      obstacles.add(new Obstacle(randomPointInRoom.x, randomPointInRoom.y));
     }
+  }
+}
 }
 
 void spawnRobots() {
   int randomRoomIndex;
   int robotCount = 0;
 
-  while(robotCount < 10) {
+  while(robotCount < BASE_MULTIPLIER + wave*2) {
 
       randomRoomIndex = map.randomRoomIndex();
       PVector randomPointInRoom = randomPointInRoom(randomRoomIndex);
@@ -893,14 +954,12 @@ void drawRobots(){
 
   for(int i = 0; i < seekBots.size(); i++) {
     if(seekBots.get(i).pursue == true) {
-      System.out.println(true);
       for(int j = 0; j < family.size(); j++){
         if(seekBots.get(i).member == family.get(j).member) {
           seekBots.get(i).draw(family.get(j));
         }
       }
     } else {
-      System.out.println(false);
       seekBots.get(i).draw();
     }
   }
@@ -943,10 +1002,8 @@ void printSpawns() {
 void checkRooms() {
   for(Room room : map.rooms) {
     if(room.position.x + room.width > displayWidth) {
-      System.out.println("bad x");
     }
     if(room.position.y + room.height > displayHeight) {
-      System.out.println("bad y");
     }
   }
 }

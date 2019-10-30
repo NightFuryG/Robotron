@@ -13,12 +13,12 @@ class Player {
   int lives;
   int roomIndex;
 
-  Player(int x, int y) {
+  Player(int x, int y, int lives) {
     this.position = new PVector(x, y);
     this.velocity = new PVector(0,0);
     this.playerSize = PLAYER_RADIUS;
     this.playerSpeed = PLAYER_SPEED;
-    this.lives = PLAYER_LIVES;
+    this.lives = lives;
     this.roomIndex = 0;
   }
 

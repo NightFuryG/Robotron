@@ -24,11 +24,12 @@ class SeekBot extends Robot {
   }
 
   void update(Human human) {
+    ensureRobotInArea();
     pursue(human);
   }
 
   void update() {
-
+    wander();
   }
 
   void display() {
@@ -39,7 +40,6 @@ class SeekBot extends Robot {
   void draw(Human human){
     update(human);
     display();
-    System.out.println("reached");
   }
 
   void draw() {
@@ -70,37 +70,6 @@ class SeekBot extends Robot {
     velocity.limit(0.5);
     this.position.add(this.velocity);
 
-    int cornerBounce = 1;
-
-    if(!checkNotBlack(getLeftColor()) || checkLeftEdge()) {
-      if (this.velocity.x < 0) {
-        this.velocity.x = -this.velocity.x;
-      }
-      else if (this.velocity.x >= 0) {
-        this.velocity.x = cornerBounce;
-      }
-    }
-    if(!checkNotBlack(getRightColor()) || checkRightEdge()){
-      if (this.velocity.x > 0) {
-        this.velocity.x = -this.velocity.x;
-      } else if (this.velocity.x <= 0) {
-          this.velocity.x = -cornerBounce;
-      }
-    }
-    if(!checkNotBlack(getUpColor()) || checkTopEdge()){
-      if (this.velocity.y < 0) {
-        this.velocity.y = -this.velocity.y;
-      } else if (this.velocity.y >= 0) {
-          this.velocity.y = cornerBounce;
-      }
-    }
-    if(!checkNotBlack(getDownColor()) || checkBottomEdge()){
-      if (this.velocity.y > 0) {
-        this.velocity.y = -this.velocity.y;
-      } else if (this.velocity.y <= 0) {
-        this.velocity.y = -cornerBounce;
-      }
-    }
 
     orientation += rotation ;
     if (orientation > PI) orientation -= 2*PI ;
